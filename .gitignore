@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+venv/
+env/
+job_env/
+.job_env/
+.Python
+*.env/
+
+.env
+.env.*
+
+*.log
+
+.cache/
+dist/
+build/
+
+# Project files
+seen_jobs.txt
+test.py
+temp.py
