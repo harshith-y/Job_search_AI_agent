@@ -1,14 +1,12 @@
 """
-Consolidated Scrapers
-All scraping and searching functionality in one place
+Integrated Job Scrapers
+Uses BOTH direct site scraping AND Google Search for comprehensive coverage
 """
 
-import requests
-from bs4 import BeautifulSoup
-import yaml
-import time
 import os
 from dotenv import load_dotenv
+from universal_scraper import UniversalJobScraper, scrape_all_sites
+import requests
 
 load_dotenv()
 
@@ -16,270 +14,270 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_SEARCH_API_KEY")
 GOOGLE_CSE_ID = os.getenv("GOOGLE_CSE_ID")
 
 
-# ============================================================================
-# CONFIG LOADING
-# ============================================================================
-
-def load_config():
-    """Load job sites from config.yaml"""
-    try:
-        with open("config.yaml", "r") as f:
-            config = yaml.safe_load(f)
-        
-        easy_sites = config.get("easy_sites", [])
-        medium_sites = config.get("medium_sites", [])
-        hard_sites = config.get("hard_sites", [])
-        
-        return easy_sites, medium_sites, hard_sites
-    except Exception as e:
-        print(f"❌ Error loading config: {e}")
-        return [], [], []
-
-
-# ============================================================================
-# INDUSTRY JOB SCRAPING
-# ============================================================================
-
-def scrape_jobs_ac_uk(keywords="machine learning", max_results=20):
-    """Scrape jobs.ac.uk for ML/AI jobs"""
-    print(f"🔍 Scraping jobs.ac.uk...")
+def find_all_industry_jobs():
+    """
+    Find industry ML jobs using BOTH methods:
+    1. Direct scraping of configured sites
+    2. Google Search as supplement
+    """
     
-    base_url = "https://www.jobs.ac.uk"
-    search_url = f"{base_url}/search/"
-    
-    params = {
-        'keywords': keywords,
-        'location': 'UK',
-        'sort': 'date'
-    }
-    
-    jobs = []
-    
-    try:
-        response = requests.get(search_url, params=params, timeout=10)
-        response.raise_for_status()
-        
-        soup = BeautifulSoup(response.text, "html.parser")
-        
-        job_cards = soup.find_all("li", class_="job-result")
-        if not job_cards:
-            job_cards = soup.find_all("article", class_="job")
-        
-        for card in job_cards[:max_results]:
-            try:
-                title_tag = card.find("h3") or card.find("h2")
-                link_tag = card.find("a")
-                
-                if not title_tag or not link_tag:
-                    continue
-                
-                title = title_tag.text.strip()
-                url = link_tag.get("href")
-                
-                if url and not url.startswith("http"):
-                    url = base_url + url
-                
-                company_tag = card.find("span", class_="company") or card.find("p", class_="employer")
-                company = company_tag.text.strip() if company_tag else "Unknown"
-                
-                location_tag = card.find("span", class_="location")
-                location = location_tag.text.strip() if location_tag else "UK"
-                
-                desc_tag = card.find("p", class_="description") or card.find("div", class_="snippet")
-                description = desc_tag.text.strip() if desc_tag else "See job posting for details"
-                
-                jobs.append({
-                    "title": title,
-                    "company": company,
-                    "location": location,
-                    "url": url,
-                    "description": description,
-                    "job_type": "Industry",
-                    "source": "jobs.ac.uk"
-                })
-                
-            except Exception as e:
-                continue
-        
-        print(f"✅ Found {len(jobs)} jobs on jobs.ac.uk")
-        return jobs
-        
-    except Exception as e:
-        print(f"❌ Error scraping jobs.ac.uk: {e}")
-        return []
-
-
-def scrape_industry_jobs():
-    """Scrape all configured industry job sites"""
-    easy_sites, _, _ = load_config()
+    print("\n" + "="*60)
+    print("💼 INDUSTRY JOB SEARCH")
+    print("="*60 + "\n")
     
     all_jobs = []
     
-    for site in easy_sites:
-        site_name = site.get("name", "Unknown")
-        
-        if "jobs.ac.uk" in site_name.lower():
-            jobs = scrape_jobs_ac_uk()
-            all_jobs.extend(jobs)
-        else:
-            print(f"⚠️  Scraper not implemented for: {site_name}")
+    # METHOD 1: Direct site scraping
+    print("📍 METHOD 1: Direct Site Scraping")
+    print("-" * 60)
     
-    return all_jobs
+    try:
+        scraped_jobs = scrape_all_sites()
+        all_jobs.extend(scraped_jobs)
+        print(f"✅ Found {len(scraped_jobs)} jobs from direct scraping\n")
+    except Exception as e:
+        print(f"❌ Scraping error: {e}\n")
+    
+    # METHOD 2: Google Search (supplement)
+    print("📍 METHOD 2: Google Search (Supplement)")
+    print("-" * 60)
+    
+    try:
+        google_jobs = search_google_industry_jobs()
+        all_jobs.extend(google_jobs)
+        print(f"✅ Found {len(google_jobs)} jobs from Google Search\n")
+    except Exception as e:
+        print(f"❌ Google Search error: {e}\n")
+    
+    # Deduplicate by URL
+    seen_urls = set()
+    unique_jobs = []
+    
+    for job in all_jobs:
+        if job['url'] not in seen_urls:
+            seen_urls.add(job['url'])
+            unique_jobs.append(job)
+    
+    print("=" * 60)
+    print(f"✅ Total unique industry jobs: {len(unique_jobs)}")
+    print("=" * 60 + "\n")
+    
+    return unique_jobs
 
 
-# ============================================================================
-# GOOGLE SEARCH (INDUSTRY)
-# ============================================================================
+def find_all_phd_positions():
+    """
+    Find PhD positions using BOTH methods:
+    1. Direct scraping of PhD sources
+    2. Google Search as supplement
+    """
+    
+    print("\n" + "="*60)
+    print("🎓 PHD POSITION SEARCH")
+    print("="*60 + "\n")
+    
+    all_positions = []
+    
+    # METHOD 1: Direct scraping of PhD sources
+    print("📍 METHOD 1: Direct PhD Site Scraping")
+    print("-" * 60)
+    
+    try:
+        scraper = UniversalJobScraper()
+        
+        # Scrape PhD-specific sources
+        if 'phd_sources' in scraper.config:
+            for source in scraper.config['phd_sources']:
+                positions = scraper.scrape_site(source['name'], source['url'])
+                all_positions.extend(positions)
+        
+        print(f"✅ Found {len(all_positions)} positions from direct scraping\n")
+    except Exception as e:
+        print(f"❌ Scraping error: {e}\n")
+    
+    # METHOD 2: Google Search
+    print("📍 METHOD 2: Google Search (Supplement)")
+    print("-" * 60)
+    
+    try:
+        google_positions = search_google_phd_positions()
+        all_positions.extend(google_positions)
+        print(f"✅ Found {len(google_positions)} positions from Google Search\n")
+    except Exception as e:
+        print(f"❌ Google Search error: {e}\n")
+    
+    # Deduplicate
+    seen_urls = set()
+    unique_positions = []
+    
+    for pos in all_positions:
+        if pos['url'] not in seen_urls:
+            seen_urls.add(pos['url'])
+            unique_positions.append(pos)
+    
+    print("=" * 60)
+    print(f"✅ Total unique PhD positions: {len(unique_positions)}")
+    print("=" * 60 + "\n")
+    
+    return unique_positions
+
 
 def search_google_industry_jobs():
-    """Search Google for industry ML/AI jobs"""
-    
-    if not GOOGLE_API_KEY or not GOOGLE_CSE_ID:
-        print("⚠️  Google API not configured - skipping search")
-        return []
+    """Google Search for industry jobs (supplement to scraping)"""
     
     queries = [
-        "machine learning engineer UK jobs",
-        "AI researcher position UK"
+        "machine learning engineer jobs UK site:linkedin.com",
+        "ML engineer UK site:indeed.co.uk",
+        "research scientist AI UK",
+        "computer vision engineer London UK",
     ]
     
     all_jobs = []
     
     for query in queries:
-        results = search_google(query, num_results=10)
-        for result in results:
-            result["job_type"] = "Industry"
-            result["source"] = f"Google: {query}"
-        all_jobs.extend(results)
+        print(f"   🔍 {query[:50]}...")
+        
+        url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            "key": GOOGLE_API_KEY,
+            "cx": GOOGLE_CSE_ID,
+            "q": query,
+            "num": 10
+        }
+        
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                results = response.json()
+                
+                for item in results.get("items", []):
+                    job = {
+                        "title": item.get("title", ""),
+                        "company": extract_company_from_url(item.get("link", "")),
+                        "location": "UK",
+                        "city": "",
+                        "description": item.get("snippet", ""),
+                        "url": item.get("link", ""),
+                        "source": "Google Search",
+                        "salary": "Not specified",
+                        "post_date": "Recent",
+                        "deadline": "Not specified",
+                        "requirements": [],
+                        "expectations": [],
+                        "cv_required": "Not specified",
+                        "cover_letter_required": "Not specified",
+                    }
+                    all_jobs.append(job)
+        
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
     
     return all_jobs
 
 
-# ============================================================================
-# PHD POSITION SEARCHING (GOOGLE ONLY - FindAPhD blocked)
-# ============================================================================
-
 def search_google_phd_positions():
-    """Search Google for PhD positions"""
-    
-    if not GOOGLE_API_KEY or not GOOGLE_CSE_ID:
-        print("⚠️  Google API not configured - skipping search")
-        return []
-    
-    print(f"🌐 Searching Google for PhD positions...")
+    """Google Search for PhD positions (supplement to scraping)"""
     
     queries = [
-        "machine learning PhD UK 2025 funded",
-        "artificial intelligence PhD studentship UK",
-        "computer vision PhD EPSRC funded",
-        "NLP PhD Cambridge Oxford Imperial",
-        "deep learning PhD position UK"
+        "PhD machine learning UK funded 2025",
+        "PhD computer vision UK studentship",
+        "EPSRC PhD machine learning UK",
     ]
     
     all_positions = []
     
-    for i, query in enumerate(queries, 1):
-        print(f"  🔍 [{i}/{len(queries)}] '{query}'")
-        results = search_google(query, num_results=10, days_ago=30)
-        for result in results:
-            result["job_type"] = "PhD"
-            result["source"] = f"Google: {query}"
-            result["funding"] = "Check website"
-            result["deadline"] = "Check website"
-        all_positions.extend(results)
-        time.sleep(1)
+    for query in queries:
+        print(f"   🔍 {query[:50]}...")
+        
+        url = "https://www.googleapis.com/customsearch/v1"
+        params = {
+            "key": GOOGLE_API_KEY,
+            "cx": GOOGLE_CSE_ID,
+            "q": query,
+            "num": 10
+        }
+        
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                results = response.json()
+                
+                for item in results.get("items", []):
+                    position = {
+                        "title": item.get("title", ""),
+                        "company": extract_company_from_url(item.get("link", "")),
+                        "location": "UK",
+                        "city": "",
+                        "description": item.get("snippet", ""),
+                        "url": item.get("link", ""),
+                        "source": "Google Search",
+                        "salary": "Check listing",
+                        "post_date": "Recent",
+                        "deadline": "Not specified",
+                        "requirements": [],
+                        "expectations": [],
+                        "cv_required": "Not specified",
+                        "cover_letter_required": "Not specified",
+                    }
+                    all_positions.append(position)
+        
+        except Exception as e:
+            print(f"   ❌ Error: {e}")
     
-    print(f"✅ Found {len(all_positions)} PhD positions via Google")
-    
-    # Deduplicate
-    seen_urls = set()
-    unique = []
-    for pos in all_positions:
-        if pos['url'] not in seen_urls:
-            seen_urls.add(pos['url'])
-            unique.append(pos)
-    
-    print(f"✅ {len(unique)} unique positions after deduplication")
-    
-    return unique
+    return all_positions
 
 
-# ============================================================================
-# GOOGLE SEARCH (GENERIC)
-# ============================================================================
-
-def search_google(query, num_results=10, days_ago=7):
-    """Generic Google search function"""
+def extract_company_from_url(url):
+    """Extract company name from URL"""
     
-    base_url = "https://www.googleapis.com/customsearch/v1"
-    params = {
-        'key': GOOGLE_API_KEY,
-        'cx': GOOGLE_CSE_ID,
-        'q': query,
-        'num': num_results,
-        'dateRestrict': f'd{days_ago}'
+    company_map = {
+        "linkedin.com": "LinkedIn Job",
+        "indeed.co.uk": "Indeed Listing",
+        "glassdoor.co.uk": "Glassdoor Listing",
+        "deepmind.com": "Google DeepMind",
+        "google.com": "Google",
+        "microsoft.com": "Microsoft",
+        "amazon": "Amazon",
+        "meta.com": "Meta",
+        "anthropic.com": "Anthropic",
+        "openai.com": "OpenAI",
+        "jobs.ac.uk": "Jobs.ac.uk",
+        "cam.ac.uk": "University of Cambridge",
+        "ox.ac.uk": "University of Oxford",
+        "imperial.ac.uk": "Imperial College London",
+        "ucl.ac.uk": "UCL",
+        "kcl.ac.uk": "King's College London",
+        "ed.ac.uk": "University of Edinburgh",
     }
     
+    for key, name in company_map.items():
+        if key in url.lower():
+            return name
+    
     try:
-        response = requests.get(base_url, params=params, timeout=10)
-        response.raise_for_status()
-        
-        data = response.json()
-        results = []
-        
-        if 'items' in data:
-            for item in data['items']:
-                results.append({
-                    'title': item.get('title', ''),
-                    'url': item.get('link', ''),
-                    'company': item.get('displayLink', ''),
-                    'location': 'UK',
-                    'description': item.get('snippet', ''),
-                })
-        
-        return results
-    
-    except Exception as e:
-        print(f"  ⚠️  Search error: {e}")
-        return []
+        domain = url.split("//")[1].split("/")[0]
+        domain = domain.replace("www.", "")
+        return domain.split(".")[0].title()
+    except:
+        return "Unknown"
 
-
-# ============================================================================
-# CONVENIENCE FUNCTIONS
-# ============================================================================
-
-def find_all_industry_jobs():
-    """Find industry jobs using both scraping and search"""
-    jobs = scrape_industry_jobs()
-    
-    if GOOGLE_API_KEY:
-        searched = search_google_industry_jobs()
-        jobs.extend(searched)
-    
-    return jobs
-
-
-def find_all_phd_positions():
-    """Find PhD positions using Google search"""
-    return search_google_phd_positions()
-
-
-# ============================================================================
-# EXAMPLE USAGE
-# ============================================================================
 
 if __name__ == "__main__":
-    print("="*60)
-    print("SCRAPER TEST")
-    print("="*60)
-    print()
+    # Test integrated scraping
+    print("Testing integrated job search...\n")
     
-    # Test industry scraping
-    print("Testing industry job scraping...")
-    industry = find_all_industry_jobs()
-    print(f"\n✅ Found {len(industry)} industry jobs\n")
+    jobs = find_all_industry_jobs()
     
-    # Test PhD search
-    print("Testing PhD position search...")
-    phds = find_all_phd_positions()
-    print(f"\n✅ Found {len(phds)} PhD positions\n")
+    print(f"\n{'='*60}")
+    print(f"Sample Results:")
+    print(f"{'='*60}\n")
+    
+    for i, job in enumerate(jobs[:5], 1):
+        print(f"{i}. {job['title']}")
+        print(f"   Company: {job['company']}")
+        print(f"   Location: {job.get('city', job['location'])}")
+        print(f"   Source: {job.get('source', 'Unknown')}")
+        print(f"   URL: {job['url'][:60]}...")
+        print()

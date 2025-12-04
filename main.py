@@ -1,224 +1,235 @@
 #!/usr/bin/env python3
 """
-Job Search Agent - Main Entry Point
-Searches for BOTH industry jobs AND PhD positions
-Includes interactive review system with like/dislike/maybe
-Uses Claude Sonnet 4 for filtering
+Main Job Search Script
+Uses Universal Scraper + Google Search + Claude Filtering + GUI Review
 """
 
-import os
 import sys
-from datetime import datetime
-from dotenv import load_dotenv
-
-# Import components
-from memory import load_memory, is_new_job, update_memory
-from agent_claude import filter_industry_job, filter_phd_position
 from scrapers import find_all_industry_jobs, find_all_phd_positions
+from agent_claude import filter_industry_job, filter_phd_position
+from memory import is_new_job, mark_as_seen
 from notifier import send_discord_notification
-from tracker import JobTracker
+from tracker import EnhancedJobTracker
 from review_gui import start_review_server
 
-load_dotenv()
 
-
-def search_industry_jobs():
-    """Search for industry ML/AI jobs"""
-    print(f"\n{'='*60}")
-    print(f"💼 INDUSTRY JOB SEARCH")
-    print(f"{'='*60}\n")
+def main(search_type="both"):
+    """
+    Main job search function
     
-    # Find jobs (scraping + search)
-    all_jobs = find_all_industry_jobs()
-    print(f"✅ Total jobs found: {len(all_jobs)}")
+    Args:
+        search_type: "industry", "phd", or "both"
+    """
     
-    if not all_jobs:
-        print("⚠️  No jobs found")
-        return []
+    print("\n" + "="*70)
+    print("🎯 JOB SEARCH AGENT - UNIVERSAL SCRAPER EDITION")
+    print("="*70 + "\n")
     
-    # Filter for new
-    seen = load_memory()
-    new_jobs = [job for job in all_jobs if is_new_job(job['url'])]
-    print(f"🆕 New jobs: {len(new_jobs)}")
+    all_relevant_jobs = []
+    tracker = EnhancedJobTracker()
     
-    if not new_jobs:
-        print("✨ No new jobs - all caught up!")
-        return []
+    # ========================================================================
+    # INDUSTRY JOBS
+    # ========================================================================
     
-    # AI filtering
-    print(f"\n🤖 Filtering with Claude Sonnet 4...")
-    relevant_jobs = []
-    
-    for i, job in enumerate(new_jobs, 1):
-        print(f"  [{i}/{len(new_jobs)}] {job['title'][:50]}...", end=" ")
-        
-        try:
-            is_relevant, info = filter_industry_job(job)
-            
-            if is_relevant:
-                job["ai_summary"] = info["summary"]
-                relevant_jobs.append(job)
-                print("✅")
-            else:
-                print("⏭️")
-        
-        except Exception as e:
-            print(f"❌")
-            continue
-    
-    # Update memory
-    update_memory([job['url'] for job in new_jobs])
-    
-    print(f"\n💾 Updated memory: {len(new_jobs)} jobs")
-    print(f"✅ Relevant jobs: {len(relevant_jobs)}")
-    
-    return relevant_jobs
-
-
-def search_phd_positions():
-    """Search for PhD positions"""
-    print(f"\n{'='*60}")
-    print(f"🎓 PhD POSITION SEARCH")
-    print(f"{'='*60}\n")
-    
-    # Find positions (Google search)
-    all_positions = find_all_phd_positions()
-    
-    if not all_positions:
-        print("⚠️  No positions found")
-        return []
-    
-    # Load PhD memory
-    phd_memory_file = "seen_phds.txt"
-    if os.path.exists(phd_memory_file):
-        with open(phd_memory_file, "r") as f:
-            seen_phds = set(line.strip() for line in f if line.strip())
-    else:
-        seen_phds = set()
-        open(phd_memory_file, "w").close()
-    
-    # Filter for new
-    new_positions = [p for p in all_positions if p['url'] not in seen_phds]
-    print(f"🆕 New positions: {len(new_positions)}")
-    
-    if not new_positions:
-        print("✨ No new positions - all caught up!")
-        return []
-    
-    # AI filtering
-    print(f"\n🤖 Filtering with Claude Sonnet 4...")
-    relevant_positions = []
-    
-    for i, phd in enumerate(new_positions, 1):
-        print(f"  [{i}/{len(new_positions)}] {phd['title'][:50]}...", end=" ")
-        
-        try:
-            is_relevant, info = filter_phd_position(phd)
-            
-            if is_relevant:
-                phd["ai_info"] = info
-                phd["ai_summary"] = info.get("summary", "")
-                relevant_positions.append(phd)
-                
-                funding = info.get('funding_status', 'Unknown')
-                if 'FUNDED' in funding.upper():
-                    print("✅ 💰")
-                elif 'UNCLEAR' in funding.upper():
-                    print("⚠️ 💰?")
-                else:
-                    print("❌")
-            else:
-                print("⏭️")
-        
-        except Exception as e:
-            print(f"❌")
-            continue
-    
-    # Update memory
-    with open(phd_memory_file, "a") as f:
-        for phd in new_positions:
-            f.write(phd['url'] + "\n")
-    
-    print(f"\n💾 Updated memory: {len(new_positions)} positions")
-    print(f"✅ Relevant positions: {len(relevant_positions)}")
-    
-    return relevant_positions
-
-
-def main():
-    """Main workflow"""
-    
-    print(f"\n{'#'*60}")
-    print(f"# JOB SEARCH AGENT")
-    print(f"# {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print(f"{'#'*60}")
-    
-    # Determine what to search
-    if len(sys.argv) > 1:
-        search_type = sys.argv[1].lower()
-    else:
-        search_type = "both"  # Default: search both
-    
-    industry_jobs = []
-    phd_positions = []
-    
-    # Search based on argument
     if search_type in ["both", "industry"]:
-        industry_jobs = search_industry_jobs()
+        print("💼 SEARCHING FOR INDUSTRY ML/AI JOBS...")
+        print("-" * 70 + "\n")
+        
+        # Find jobs using universal scraper + Google Search
+        industry_jobs = find_all_industry_jobs()
+        
+        if not industry_jobs:
+            print("⚠️  No industry jobs found")
+        else:
+            # Filter with Claude
+            print(f"\n🤖 Filtering {len(industry_jobs)} jobs with Claude AI...")
+            print("   (Using your preferences from user_preferences.py)")
+            print()
+            
+            relevant_count = 0
+            
+            for i, job in enumerate(industry_jobs, 1):
+                # Check if new
+                if not is_new_job(job['url']):
+                    continue
+                
+                # Filter with Claude
+                print(f"   [{i}/{len(industry_jobs)}] {job['title'][:50]}... ", end="")
+                
+                try:
+                    is_relevant, info = filter_industry_job(job)
+                    
+                    if is_relevant:
+                        print("✅ MATCH")
+                        
+                        # Add AI analysis
+                        job['ai_summary'] = info.get('summary', '')
+                        job['ai_analysis'] = info.get('full_analysis', '')
+                        job['job_type'] = 'Industry'
+                        
+                        # Add to tracker and results
+                        tracker.add_job(job, status='new')
+                        all_relevant_jobs.append(job)
+                        
+                        # Mark as seen
+                        mark_as_seen(job['url'])
+                        
+                        relevant_count += 1
+                    else:
+                        print("⏭  Skip")
+                
+                except Exception as e:
+                    print(f"❌ Error: {e}")
+            
+            print(f"\n   ✅ Found {relevant_count} relevant industry jobs\n")
+    
+    # ========================================================================
+    # PHD POSITIONS
+    # ========================================================================
     
     if search_type in ["both", "phd"]:
-        phd_positions = search_phd_positions()
+        print("🎓 SEARCHING FOR PHD POSITIONS...")
+        print("-" * 70 + "\n")
+        
+        # Find PhD positions using universal scraper + Google Search
+        phd_positions = find_all_phd_positions()
+        
+        if not phd_positions:
+            print("⚠️  No PhD positions found")
+        else:
+            # Filter with Claude
+            print(f"\n🤖 Filtering {len(phd_positions)} positions with Claude AI...")
+            print("   (Using your preferences from user_preferences.py)")
+            print()
+            
+            relevant_count = 0
+            
+            for i, position in enumerate(phd_positions, 1):
+                # Check if new
+                if not is_new_job(position['url']):
+                    continue
+                
+                # Filter with Claude
+                print(f"   [{i}/{len(phd_positions)}] {position['title'][:50]}... ", end="")
+                
+                try:
+                    is_relevant, info = filter_phd_position(position)
+                    
+                    if is_relevant:
+                        print("✅ MATCH")
+                        
+                        # Add AI analysis
+                        position['ai_summary'] = info.get('summary', '')
+                        position['ai_analysis'] = str(info)
+                        position['job_type'] = 'PhD'
+                        position['funding_status'] = info.get('funding_status', 'Unknown')
+                        
+                        # Add to tracker and results
+                        tracker.add_job(position, status='new')
+                        all_relevant_jobs.append(position)
+                        
+                        # Mark as seen
+                        mark_as_seen(position['url'])
+                        
+                        relevant_count += 1
+                    else:
+                        print("⏭  Skip")
+                
+                except Exception as e:
+                    print(f"❌ Error: {e}")
+            
+            print(f"\n   ✅ Found {relevant_count} relevant PhD positions\n")
     
-    # Combine results
-    all_relevant = industry_jobs + phd_positions
+    # ========================================================================
+    # RESULTS
+    # ========================================================================
     
-    # Print summary
-    print(f"\n{'='*60}")
-    print(f"📊 SUMMARY")
-    print(f"{'='*60}")
-    print(f"💼 Industry jobs: {len(industry_jobs)}")
-    print(f"🎓 PhD positions: {len(phd_positions)}")
-    print(f"📌 Total relevant: {len(all_relevant)}")
-    print(f"{'='*60}\n")
+    print("="*70)
+    print("📊 SEARCH COMPLETE")
+    print("="*70 + "\n")
     
-    if not all_relevant:
-        print("✨ No new opportunities found today!\n")
+    if not all_relevant_jobs:
+        print("❌ No relevant jobs found this time")
+        print("\nSuggestions:")
+        print("  • Check user_preferences.py (maybe too strict?)")
+        print("  • Try different search queries in config.yaml")
+        print("  • Add more job sources to config.yaml")
+        print()
         return
     
-    # Send notifications
-    if os.getenv("DISCORD_WEBHOOK_URL"):
-        try:
-            send_discord_notification(all_relevant)
-            print("✅ Discord notification sent")
-        except Exception as e:
-            print(f"⚠️  Discord error: {e}")
+    print(f"✅ Found {len(all_relevant_jobs)} relevant opportunities:")
     
-    # Interactive review
-    print(f"\n💡 Ready to review jobs?")
-    choice = input("   Start web review interface? [Y/n]: ").strip().lower()
+    industry_count = len([j for j in all_relevant_jobs if j.get('job_type') == 'Industry'])
+    phd_count = len([j for j in all_relevant_jobs if j.get('job_type') == 'PhD'])
     
-    if choice != 'n':
-        print(f"\n🌐 Starting web interface...")
-        start_review_server(all_relevant)
-    else:
-        print("\n✅ Jobs saved to memory. Run 'python tracker.py export' to see them.")
-        # Still export to spreadsheet
-        tracker = JobTracker()
-        for job in all_relevant:
-            tracker.add_job(job, status="new")
-        tracker.export_to_excel()
+    print(f"   💼 Industry: {industry_count}")
+    print(f"   🎓 PhD: {phd_count}")
+    print()
     
-    print("\n✅ Search complete!\n")
+    # Send Discord notification
+    try:
+        print("📱 Sending Discord notification...")
+        send_discord_notification(all_relevant_jobs)
+        print("   ✅ Notification sent\n")
+    except Exception as e:
+        print(f"   ⚠️  Could not send notification: {e}\n")
+    
+    # Export to spreadsheet
+    print("📊 Updating spreadsheet...")
+    tracker.export_to_excel_fancy()
+    print()
+    
+    # Launch GUI for review
+    print("="*70)
+    print("🎨 LAUNCHING REVIEW GUI")
+    print("="*70 + "\n")
+    
+    print("Opening web interface in your browser...")
+    print("Review each job with Like/Maybe/Pass buttons!")
+    print("\nPress Ctrl+C to skip GUI and exit\n")
+    
+    try:
+        start_review_server(all_relevant_jobs, port=5000)
+    except KeyboardInterrupt:
+        print("\n\n⚠️  GUI skipped")
+    
+    print("\n" + "="*70)
+    print("✅ JOB SEARCH COMPLETE")
+    print("="*70)
+    
+    print(f"\n📊 Results saved to:")
+    print(f"   • job_applications_enhanced.xlsx (spreadsheet)")
+    print(f"   • job_tracker_enhanced.json (database)")
+    print()
+    
+    print("Next steps:")
+    print("  1. Review spreadsheet for detailed info")
+    print("  2. Update 'Status' column with dropdowns")
+    print("  3. Add notes for jobs you like")
+    print("  4. Mark when you apply!")
+    print()
 
 
 if __name__ == "__main__":
+    # Parse command line arguments
+    if len(sys.argv) > 1:
+        search_type = sys.argv[1].lower()
+        if search_type not in ["industry", "phd", "both"]:
+            print("Usage: python main.py [industry|phd|both]")
+            print("Example: python main.py industry")
+            sys.exit(1)
+    else:
+        search_type = "both"
+    
     try:
-        main()
+        main(search_type)
     except KeyboardInterrupt:
-        print("\n\n⚠️  Interrupted by user")
-        sys.exit(0)
+        print("\n\n⚠️  Search interrupted by user")
     except Exception as e:
-        print(f"\n❌ Error: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+        print(f"\n\n❌ Error: {e}")
+        print("\nTroubleshooting:")
+        print("  • Check that all required files exist")
+        print("  • Check .env file has API keys")
+        print("  • Check internet connection")
+        print("  • Try: pip install -r requirements.txt")

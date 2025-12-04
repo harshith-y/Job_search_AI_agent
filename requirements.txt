@@ -1,11 +1,9 @@
 # Core dependencies
+anthropic>=0.75.0
 beautifulsoup4==4.13.4
 requests==2.32.4
 PyYAML==6.0.2
 python-dotenv==1.1.1
-
-# OpenAI API (updated to latest version)
-openai>=1.0.0
 
 # Web scraping
 lxml==5.3.0
@@ -14,12 +12,16 @@ html5lib==1.1
 # Notifications
 discord.py==2.5.2  # Only if using Discord bot (webhook doesn't need this)
 
-# API Server (optional)
+# API Server 
 fastapi==0.116.1
 uvicorn==0.35.0
+pydantic>=2.0.0
 
 # Scheduling (optional - for built-in scheduler)
 APScheduler==3.11.0
+
+# For scheduled jobs
+schedule>=1.2.0
 
 # Data handling
 pandas==2.3.1
@@ -29,5 +31,11 @@ openpyxl==3.1.5  # For Excel export if needed
 tqdm==4.67.1
 click==8.2.1
 colorama==0.4.6
+
+# For Excel spreadsheet export (tracker)
+openpyxl>=3.1.0
+
+# For web GUI (Flask)
+Flask>=3.0.0
 
 # Note: You can comment out packages you don't need to keep environment lightweight

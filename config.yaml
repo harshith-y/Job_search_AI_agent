@@ -1,63 +1,158 @@
-# Job Search Configuration
-# Focus: UK Machine Learning / AI / Data Science Roles
+# Job Search Configuration - FIXED URLS
+# Updated URLs that work + removed blocked sites
 
+# ============================================================================
+# WORKING SCRAPERS (Tested and working)
+# ============================================================================
 easy_sites:
-  # ML-specific job boards
-  - name: Machine Learning Jobs UK
-    url: https://machinelearningjobs.co.uk/
-  
-  - name: Jobs.ac.uk ML/AI
-    url: https://www.jobs.ac.uk/search/?keywords=machine+learning+artificial+intelligence&location=United+Kingdom
-  
-  # Top UK Universities (Research roles)
-  - name: University of Cambridge
-    url: https://www.jobs.cam.ac.uk/job/?keywords=machine+learning
-  
-  - name: University of Oxford
-    url: https://www.jobs.ox.ac.uk/home
-  
-  - name: Imperial College London
-    url: https://www.imperial.ac.uk/jobs/search-internal/
-  
-  - name: UCL (University College London)
-    url: https://www.ucl.ac.uk/work-at-ucl/search-ucl-jobs
-  
-  - name: King's College London
-    url: https://www.kcl.ac.uk/jobs/research-jobs
-  
-  - name: University of Edinburgh
-    url: https://www.jobs.ed.ac.uk/
-  
-  # UK Tech Companies / Research Labs
-  - name: DeepMind Careers
-    url: https://www.deepmind.com/careers
-  
-  - name: Stability AI Jobs
-    url: https://stability.ai/careers
+  - name: "Jobs.ac.uk ML"
+    url: "https://www.jobs.ac.uk/search/?keywords=machine+learning&location=United+Kingdom"
+    notes: "UK academic and research ML jobs - WORKING"
+    
+  - name: "LinkedIn Jobs"
+    url: "https://www.linkedin.com/jobs/search/?keywords=machine%20learning%20uk&location=United%20Kingdom"
+    notes: "Professional network - WORKING (found 59 jobs!)"
 
+# ============================================================================
+# MEDIUM DIFFICULTY (Some working, some need URL fixes)
+# ============================================================================
 medium_sites:
-  # General tech job boards (UK filtered)
-  - name: Glassdoor UK ML
-    url: https://www.glassdoor.co.uk/Job/uk-machine-learning-jobs-SRCH_IL.0,2_IN2_KO3,20.htm
+  # WORKING:
+  - name: "University of Oxford"
+    url: "https://www.jobs.ox.ac.uk/home?keywords=machine+learning"
+    notes: "Oxford ML research - WORKING (found 6 jobs)"
+    
+  - name: "Queen Mary University"
+    url: "https://www.qmul.ac.uk/jobs/vacancies/?q=machine+learning"
+    notes: "QMUL ML positions - WORKING (found 30 jobs!)"
   
-  - name: Adzuna UK ML
-    url: https://www.adzuna.co.uk/jobs/q-machine-learning
+  # NEED URL FIXES (404 errors):
+  # - name: "Imperial College London"
+  #   url: "https://www.imperial.ac.uk/jobs/search/?q=machine+learning"
+  #   notes: "BROKEN - needs new URL"
   
-  - name: Reed.co.uk ML
-    url: https://www.reed.co.uk/jobs/machine-learning-jobs
+  # - name: "UCL (University College London)"
+  #   url: "https://www.ucl.ac.uk/work-at-ucl/search-ucl-jobs?q=machine+learning"
+  #   notes: "BROKEN - needs new URL"
   
-  - name: Technojobs UK
-    url: https://www.technojobs.co.uk/jobs/machine-learning
+  # - name: "University of Cambridge"
+  #   url: "https://www.jobs.cam.ac.uk/job/-/all/?search=machine+learning"
+  #   notes: "BROKEN - needs new URL"
+  
+  - name: "King's College London"
+    url: "https://www.kcl.ac.uk/jobs/research-jobs?q=machine+learning"
+    notes: "KCL research jobs - Needs testing"
+    
+  - name: "University of Edinburgh"
+    url: "https://www.ed.ac.uk/jobs?keywords=machine+learning"
+    notes: "Edinburgh AI/ML jobs - Needs testing"
 
-hard_sites:
-  # Require browser automation (not yet implemented)
-  - name: LinkedIn UK ML
-    url: https://www.linkedin.com/jobs/search/?keywords=machine%20learning&location=United%20Kingdom
-  
-  - name: Indeed UK ML
-    url: https://www.indeed.co.uk/jobs?q=machine+learning&l=United+Kingdom
+# ============================================================================
+# BLOCKED SITES (403 Forbidden - Remove for now)
+# ============================================================================
+# These sites actively block scraping. Use Google Search instead.
+# Google Search finds jobs from these sites anyway!
 
-# Notes:
-# - "easy_sites" = Simple HTML scraping (currently implemented)
-# - "medium_sites" = More complex structure (needs custom scrapers)
-# - "hard_sites" = JavaScript-heavy (needs Selenium/Playwright)
+# hard_sites:
+#   - name: "Indeed UK ML"
+#     url: "https://www.indeed.co.uk/jobs?q=machine+learning&l=United+Kingdom"
+#     notes: "BLOCKED - Use Google Search instead"
+#   
+#   - name: "Glassdoor UK ML"
+#     url: "https://www.glassdoor.co.uk/Job/uk-machine-learning-jobs-SRCH_IL.0,2_IN2_KO3,20.htm"
+#     notes: "BLOCKED - Use Google Search instead"
+#   
+#   - name: "LinkedIn Jobs"
+#     url: "https://www.linkedin.com/jobs/search/?keywords=machine%20learning%20uk"
+#     notes: "Sometimes blocks - but currently working!"
+
+# ============================================================================
+# COMPANY-SPECIFIC PAGES (To add when URLs are found)
+# ============================================================================
+company_pages:
+  # Add these later when you find the correct career page URLs
+  # - name: "DeepMind Careers"
+  #   url: "https://www.deepmind.com/careers"
+  # - name: "Stability AI Jobs"
+  #   url: "https://stability.ai/careers"
+
+# ============================================================================
+# PHD POSITION SOURCES
+# ============================================================================
+phd_sources:
+  - name: "FindAPhD ML UK"
+    url: "https://www.findaphd.com/phds/?Keywords=machine+learning&Locations%5B%5D=United+Kingdom"
+    notes: "PhD positions database"
+    
+  - name: "Jobs.ac.uk PhDs"
+    url: "https://www.jobs.ac.uk/search/?keywords=phd+machine+learning&location=United+Kingdom"
+    notes: "Academic PhD positions"
+
+# ============================================================================
+# GOOGLE SEARCH (Backup - finds Indeed/Glassdoor jobs!)
+# ============================================================================
+google_search:
+  enabled: true
+  notes: "Finds jobs from Indeed, Glassdoor, and other blocked sites"
+  
+  industry_queries:
+    # These find jobs from blocked sites!
+    - "machine learning engineer jobs UK site:linkedin.com"
+    - "ML engineer UK site:indeed.co.uk"
+    - "AI engineer UK site:glassdoor.co.uk"
+    - "research scientist AI UK"
+    - "computer vision engineer London UK"
+    - "NLP engineer jobs UK 2024"
+  
+  phd_queries:
+    - "PhD machine learning UK funded 2025"
+    - "PhD computer vision UK studentship"
+    - "EPSRC PhD machine learning UK"
+
+# ============================================================================
+# SETTINGS
+# ============================================================================
+settings:
+  # Which groups to scrape
+  scrape_easy: true
+  scrape_medium: true
+  scrape_hard: false        # Disabled (blocked sites)
+  scrape_company_pages: false  # Disabled until URLs added
+  scrape_phd_sources: true
+  use_google_search: true    # IMPORTANT - finds blocked sites!
+  
+  # Timing
+  delay_between_sites: 2
+  request_timeout: 15
+  
+  # Filtering
+  deduplicate_by_url: true
+  min_job_title_length: 10
+
+# ============================================================================
+# NOTES
+# ============================================================================
+# 
+# WORKING SOURCES (Found jobs):
+# ✅ LinkedIn - 59 jobs
+# ✅ Queen Mary - 30 jobs  
+# ✅ Oxford - 6 jobs
+# ✅ Google Search - 40 jobs
+# Total: 133 jobs (not bad!)
+#
+# BLOCKED SOURCES (403 Forbidden):
+# ❌ Indeed - Use Google Search instead
+# ❌ Glassdoor - Use Google Search instead
+# Note: Google Search finds these jobs anyway!
+#
+# BROKEN URLS (404 Not Found):
+# ❌ Imperial College - Need to find new URL
+# ❌ UCL - Need to find new URL  
+# ❌ Cambridge - Need to find new URL
+#
+# TO ADD LATER:
+# - Company career pages (DeepMind, Anthropic, etc.)
+# - More university job boards
+# - Specialist ML job sites
+#
+# ============================================================================

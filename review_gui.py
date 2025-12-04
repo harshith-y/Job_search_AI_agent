@@ -1,27 +1,33 @@
 """
-Job Review Web Interface
-Simple web GUI for reviewing jobs with Like/Maybe/Pass buttons
+Enhanced Review GUI
+Shows detailed job information to make informed decisions:
+- Job requirements
+- Role expectations
+- City location
+- Salary
+- Post date
+- Application deadline
+- CV/Cover letter requirements
 """
 
-from flask import Flask, render_template_string, request, jsonify, redirect
+from flask import Flask, render_template_string, request, redirect
 import webbrowser
 import threading
-from tracker import JobTracker
-import os
+from tracker import EnhancedJobTracker
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key-here'
 
-# Global storage for jobs to review
-jobs_to_review = []
-tracker = JobTracker()
+# Store jobs globally
+current_jobs = []
+current_index = [0]  # Use list to allow modification in nested function
+tracker = EnhancedJobTracker()
 
-HTML_TEMPLATE = """
+
+ENHANCED_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Job Review</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Job Review - Enhanced</title>
     <style>
         * {
             margin: 0;
@@ -37,39 +43,31 @@ HTML_TEMPLATE = """
         }
         
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
         
         .header {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             text-align: center;
+            color: white;
+            margin-bottom: 30px;
         }
         
         .header h1 {
-            color: #667eea;
+            font-size: 42px;
             margin-bottom: 10px;
-            font-size: 32px;
         }
         
         .header p {
-            color: #666;
-            font-size: 16px;
+            font-size: 18px;
+            opacity: 0.9;
         }
         
         .progress {
-            background: white;
-            padding: 15px 30px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
             text-align: center;
-            font-size: 18px;
-            color: #667eea;
+            color: white;
+            font-size: 24px;
+            margin: 20px 0;
             font-weight: 600;
         }
         
@@ -77,20 +75,8 @@ HTML_TEMPLATE = """
             background: white;
             border-radius: 20px;
             padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            animation: slideIn 0.3s ease-out;
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin: 20px 0;
         }
         
         .job-type {
@@ -113,79 +99,147 @@ HTML_TEMPLATE = """
         }
         
         .job-title {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 15px;
+            color: #1a202c;
+            margin: 15px 0;
             line-height: 1.3;
         }
         
+        .job-company {
+            font-size: 22px;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+        
         .job-meta {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
         }
         
         .meta-item {
             display: flex;
             align-items: center;
             gap: 8px;
-            color: #666;
-            font-size: 16px;
         }
         
-        .meta-item svg {
-            width: 20px;
-            height: 20px;
+        .meta-icon {
+            font-size: 20px;
         }
         
-        .job-summary {
-            background: #f7fafc;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+        .meta-text {
+            font-size: 14px;
+        }
+        
+        .meta-label {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .meta-value {
+            color: #4a5568;
+        }
+        
+        .section {
+            margin: 25px 0;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-content {
+            font-size: 15px;
             line-height: 1.6;
             color: #4a5568;
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .requirements-list, .expectations-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .requirements-list li, .expectations-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .requirements-list li:last-child, .expectations-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .requirements-list li:before {
+            content: "✓ ";
+            color: #48bb78;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .expectations-list li:before {
+            content: "▸ ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 8px;
         }
         
         .job-link {
             display: inline-block;
-            color: #667eea;
+            margin: 20px 0;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
             text-decoration: none;
+            border-radius: 8px;
             font-weight: 600;
-            margin-bottom: 30px;
-            font-size: 14px;
+            transition: all 0.2s;
         }
         
         .job-link:hover {
-            text-decoration: underline;
+            background: #5568d3;
+            transform: translateY(-2px);
         }
         
         .button-group {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
-            justify-content: center;
+            margin-top: 30px;
         }
         
         .btn {
-            flex: 1;
-            padding: 18px 30px;
+            padding: 20px;
+            font-size: 20px;
+            font-weight: 700;
             border: none;
             border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            text-align: center;
+            text-decoration: none;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
         
         .btn-like {
@@ -193,51 +247,35 @@ HTML_TEMPLATE = """
             color: white;
         }
         
-        .btn-like:hover {
-            background: #38a169;
-        }
-        
         .btn-maybe {
             background: #ed8936;
             color: white;
         }
         
-        .btn-maybe:hover {
-            background: #dd6b20;
-        }
-        
         .btn-pass {
-            background: #e53e3e;
+            background: #f56565;
             color: white;
         }
         
-        .btn-pass:hover {
-            background: #c53030;
+        .btn-icon {
+            font-size: 32px;
         }
         
-        .complete-screen {
-            background: white;
-            border-radius: 20px;
-            padding: 60px 40px;
+        .completion-screen {
             text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            color: white;
+            padding: 60px 20px;
         }
         
-        .complete-screen h2 {
+        .completion-screen h2 {
             font-size: 48px;
-            margin-bottom: 20px;
-        }
-        
-        .complete-screen p {
-            font-size: 20px;
-            color: #666;
             margin-bottom: 30px;
         }
         
         .stats {
             display: flex;
-            gap: 30px;
             justify-content: center;
+            gap: 40px;
             margin: 40px 0;
         }
         
@@ -246,50 +284,32 @@ HTML_TEMPLATE = """
         }
         
         .stat-number {
-            font-size: 48px;
+            font-size: 64px;
             font-weight: 700;
-            color: #667eea;
+            margin-bottom: 10px;
         }
         
         .stat-label {
-            font-size: 16px;
-            color: #666;
-            margin-top: 5px;
-        }
-        
-        .btn-secondary {
-            background: #667eea;
-            color: white;
-            padding: 15px 40px;
-            border: none;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            margin: 10px;
-        }
-        
-        .btn-secondary:hover {
-            background: #5568d3;
+            font-size: 20px;
+            opacity: 0.9;
         }
         
         @media (max-width: 768px) {
-            .job-card {
-                padding: 25px;
-            }
-            
             .job-title {
-                font-size: 22px;
+                font-size: 24px;
             }
             
             .button-group {
-                flex-direction: column;
+                grid-template-columns: 1fr;
             }
             
-            .btn {
-                padding: 15px 20px;
+            .job-meta {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 20px;
             }
         }
     </style>
@@ -298,108 +318,158 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="header">
             <h1>🎯 Job Review</h1>
-            <p>Review your new opportunities and track what interests you</p>
+            <p>Review your opportunities with detailed information</p>
         </div>
         
-        {% if current_job %}
-        <div class="progress">
-            Job {{ current_index + 1 }} of {{ total_jobs }}
-        </div>
-        
-        <div class="job-card">
-            <span class="job-type type-{{ current_job.job_type.lower() }}">
-                {% if current_job.job_type == 'PhD' %}🎓 PhD Position{% else %}💼 Industry Job{% endif %}
-            </span>
-            
-            <h2 class="job-title">{{ current_job.title }}</h2>
-            
-            <div class="job-meta">
-                <div class="meta-item">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                    {{ current_job.company }}
+        {% if complete %}
+            <div class="completion-screen">
+                <h2>🎉 Review Complete!</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number">{{ liked_count }}</div>
+                        <div class="stat-label">👍 Liked</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">{{ maybe_count }}</div>
+                        <div class="stat-label">🤔 Maybe</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">{{ passed_count }}</div>
+                        <div class="stat-label">👎 Passed</div>
+                    </div>
                 </div>
-                <div class="meta-item">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    {{ current_job.location }}
-                </div>
+                <p style="font-size: 18px; margin: 30px 0;">
+                    Your decisions have been saved to the spreadsheet!
+                </p>
             </div>
-            
-            {% if current_job.ai_summary %}
-            <div class="job-summary">
-                💡 {{ current_job.ai_summary }}
-            </div>
-            {% endif %}
-            
-            {% if current_job.get('ai_info') and current_job.ai_info.get('funding_status') %}
-            <div class="job-summary">
-                💰 Funding: {{ current_job.ai_info.funding_status }}
-                {% if current_job.ai_info.get('research_match') %}
-                <br>📊 Research Match: {{ current_job.ai_info.research_match }}
-                {% endif %}
-            </div>
-            {% endif %}
-            
-            <a href="{{ current_job.url }}" target="_blank" class="job-link">🔗 View Full Posting →</a>
-            
-            <div class="button-group">
-                <button class="btn btn-like" onclick="reviewJob('liked')">
-                    👍 Like
-                </button>
-                <button class="btn btn-maybe" onclick="reviewJob('maybe')">
-                    🤔 Maybe
-                </button>
-                <button class="btn btn-pass" onclick="reviewJob('disliked')">
-                    👎 Pass
-                </button>
-            </div>
-        </div>
         {% else %}
-        <div class="complete-screen">
-            <h2>🎉</h2>
-            <p style="font-size: 32px; font-weight: 700; color: #2d3748;">Review Complete!</p>
-            <p>You've reviewed all {{ total_jobs }} jobs</p>
-            
-            <div class="stats">
-                <div class="stat">
-                    <div class="stat-number">{{ stats.liked }}</div>
-                    <div class="stat-label">👍 Liked</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">{{ stats.maybe }}</div>
-                    <div class="stat-label">🤔 Maybe</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">{{ stats.passed }}</div>
-                    <div class="stat-label">👎 Passed</div>
-                </div>
+            <div class="progress">
+                Job {{ current + 1 }} of {{ total }}
             </div>
             
-            <p style="margin-top: 30px;">Your spreadsheet has been updated!</p>
-            <a href="/export" class="btn-secondary">📊 Open Spreadsheet</a>
-            <a href="/close" class="btn-secondary">✅ Done</a>
-        </div>
+            <div class="job-card">
+                <span class="job-type {{ 'type-industry' if job.type == 'Industry' else 'type-phd' }}">
+                    {{ '💼 Industry Job' if job.type == 'Industry' else '🎓 PhD Position' }}
+                </span>
+                
+                <h2 class="job-title">{{ job.title }}</h2>
+                <div class="job-company">🏢 {{ job.company }}</div>
+                
+                <div class="job-meta">
+                    <div class="meta-item">
+                        <span class="meta-icon">📍</span>
+                        <div class="meta-text">
+                            <div class="meta-label">Location</div>
+                            <div class="meta-value">{{ job.city }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <span class="meta-icon">💰</span>
+                        <div class="meta-text">
+                            <div class="meta-label">Salary</div>
+                            <div class="meta-value">{{ job.salary }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <span class="meta-icon">📅</span>
+                        <div class="meta-text">
+                            <div class="meta-label">Posted</div>
+                            <div class="meta-value">{{ job.post_date }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <span class="meta-icon">⏰</span>
+                        <div class="meta-text">
+                            <div class="meta-label">Deadline</div>
+                            <div class="meta-value">{{ job.deadline }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <span class="meta-icon">📄</span>
+                        <div class="meta-text">
+                            <div class="meta-label">CV Required</div>
+                            <div class="meta-value">{{ job.cv_required }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="meta-item">
+                        <span class="meta-icon">✉️</span>
+                        <div class="meta-text">
+                            <div class="meta-label">Cover Letter</div>
+                            <div class="meta-value">{{ job.cover_letter_required }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if job.requirements and job.requirements|length > 0 %}
+                <div class="section">
+                    <div class="section-title">
+                        <span>🎯</span>
+                        <span>Key Requirements</span>
+                    </div>
+                    <div class="section-content">
+                        <ul class="requirements-list">
+                            {% for req in job.requirements[:8] %}
+                            <li>{{ req }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if job.expectations and job.expectations|length > 0 %}
+                <div class="section">
+                    <div class="section-title">
+                        <span>💡</span>
+                        <span>Role Expectations</span>
+                    </div>
+                    <div class="section-content">
+                        <ul class="expectations-list">
+                            {% for exp in job.expectations[:5] %}
+                            <li>{{ exp }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if job.ai_summary %}
+                <div class="section">
+                    <div class="section-title">
+                        <span>🤖</span>
+                        <span>AI Analysis</span>
+                    </div>
+                    <div class="section-content">
+                        {{ job.ai_summary }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <a href="{{ job.url }}" target="_blank" class="job-link">
+                    🔗 View Full Job Posting
+                </a>
+                
+                <div class="button-group">
+                    <a href="/review/like" class="btn btn-like">
+                        <span class="btn-icon">👍</span>
+                        <span>Like</span>
+                    </a>
+                    <a href="/review/maybe" class="btn btn-maybe">
+                        <span class="btn-icon">🤔</span>
+                        <span>Maybe</span>
+                    </a>
+                    <a href="/review/pass" class="btn btn-pass">
+                        <span class="btn-icon">👎</span>
+                        <span>Pass</span>
+                    </a>
+                </div>
+            </div>
         {% endif %}
     </div>
-    
-    <script>
-        function reviewJob(status) {
-            fetch('/review', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ status: status })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.complete) {
-                    window.location.href = '/complete';
-                } else {
-                    window.location.reload();
-                }
-            });
-        }
-    </script>
 </body>
 </html>
 """
@@ -407,133 +477,100 @@ HTML_TEMPLATE = """
 
 @app.route('/')
 def index():
-    """Main review page"""
-    if not jobs_to_review:
-        return render_template_string(HTML_TEMPLATE, 
-                                     current_job=None,
-                                     total_jobs=0,
-                                     stats={'liked': 0, 'maybe': 0, 'passed': 0})
+    """Show current job for review"""
     
-    return render_template_string(HTML_TEMPLATE,
-                                 current_job=jobs_to_review[0],
-                                 current_index=0,
-                                 total_jobs=len(jobs_to_review))
-
-
-@app.route('/review', methods=['POST'])
-def review():
-    """Handle review action"""
-    global jobs_to_review
-    
-    if not jobs_to_review:
-        return jsonify({'complete': True})
-    
-    status = request.json.get('status')
-    current_job = jobs_to_review[0]
-    
-    # Add to tracker
-    tracker.add_job(current_job, status=status)
-    
-    # Remove from review list
-    jobs_to_review.pop(0)
-    
-    # Check if complete
-    if not jobs_to_review:
+    if current_index[0] >= len(current_jobs):
+        # Review complete
+        liked = len([j for j in current_jobs if tracker.jobs.get(j['url'], {}).get('status') == 'liked'])
+        maybe = len([j for j in current_jobs if tracker.jobs.get(j['url'], {}).get('status') == 'maybe'])
+        passed = len([j for j in current_jobs if tracker.jobs.get(j['url'], {}).get('status') == 'disliked'])
+        
         # Export to spreadsheet
-        tracker.export_to_excel()
-        return jsonify({'complete': True})
+        tracker.export_to_excel_fancy()
+        
+        return render_template_string(
+            ENHANCED_TEMPLATE,
+            complete=True,
+            liked_count=liked,
+            maybe_count=maybe,
+            passed_count=passed
+        )
     
-    return jsonify({'complete': False})
-
-
-@app.route('/complete')
-def complete():
-    """Completion page"""
-    stats = {
-        'liked': len(tracker.get_jobs_by_status('liked')),
-        'maybe': len(tracker.get_jobs_by_status('maybe')),
-        'passed': len(tracker.get_jobs_by_status('disliked'))
-    }
+    job = current_jobs[current_index[0]]
     
-    return render_template_string(HTML_TEMPLATE,
-                                 current_job=None,
-                                 total_jobs=len(tracker.jobs),
-                                 stats=stats)
+    return render_template_string(
+        ENHANCED_TEMPLATE,
+        job=job,
+        current=current_index[0],
+        total=len(current_jobs),
+        complete=False
+    )
 
 
-@app.route('/export')
-def export():
-    """Export and open spreadsheet"""
-    filepath = tracker.export_to_excel()
+@app.route('/review/<action>')
+def review_action(action):
+    """Handle Like/Maybe/Pass action"""
     
-    # Open spreadsheet
-    import platform
-    import subprocess
+    if current_index[0] < len(current_jobs):
+        job = current_jobs[current_index[0]]
+        
+        # Map action to status
+        status_map = {
+            'like': 'liked',
+            'maybe': 'maybe',
+            'pass': 'disliked'
+        }
+        
+        status = status_map.get(action, 'new')
+        
+        # Save to tracker
+        tracker.add_job(job, status=status)
+        
+        # Move to next
+        current_index[0] += 1
     
-    try:
-        if platform.system() == 'Darwin':  # macOS
-            subprocess.call(['open', filepath])
-        elif platform.system() == 'Windows':
-            os.startfile(filepath)
-        else:  # linux
-            subprocess.call(['xdg-open', filepath])
-    except:
-        pass
-    
-    return redirect('/close')
-
-
-@app.route('/close')
-def close_server():
-    """Close the server"""
-    func = request.environ.get('werkzeug.server.shutdown')
-    if func:
-        func()
-    return '<h1>✅ Done! You can close this window.</h1><script>setTimeout(() => window.close(), 2000)</script>'
+    return redirect('/')
 
 
 def start_review_server(jobs, port=5000):
-    """Start the review web interface"""
-    global jobs_to_review
-    jobs_to_review = jobs.copy()
+    """Start the review server"""
     
-    # Open browser automatically
-    def open_browser():
-        webbrowser.open(f'http://localhost:{port}')
+    global current_jobs, current_index, tracker
+    current_jobs = jobs
+    current_index[0] = 0
+    tracker = EnhancedJobTracker()
     
-    timer = threading.Timer(1.5, open_browser)
-    timer.start()
+    # Open browser
+    threading.Timer(1.5, lambda: webbrowser.open(f'http://localhost:{port}')).start()
     
-    print(f"\n🌐 Opening review interface in your browser...")
-    print(f"   URL: http://localhost:{port}")
-    print(f"   Press Ctrl+C to stop\n")
+    print(f"\n{'='*60}")
+    print(f"🌐 Review GUI Started")
+    print(f"{'='*60}")
+    print(f"\n   Opening browser at: http://localhost:{port}")
+    print(f"   Jobs to review: {len(jobs)}")
+    print(f"\n   Press Ctrl+C to stop\n")
     
     app.run(port=port, debug=False)
 
 
-# Command line usage
 if __name__ == "__main__":
-    # Test with sample jobs
+    # Test with sample data
     sample_jobs = [
         {
             "title": "Machine Learning Engineer",
             "company": "Google DeepMind",
-            "location": "London, UK",
-            "url": "https://careers.google.com/example",
-            "job_type": "Industry",
-            "ai_summary": "Exciting ML role focusing on reinforcement learning for robotics applications."
-        },
-        {
-            "title": "PhD in Computer Vision",
-            "company": "University of Cambridge",
-            "location": "Cambridge, UK",
-            "url": "https://cam.ac.uk/example",
-            "job_type": "PhD",
-            "ai_summary": "Fully funded PhD position researching novel approaches to 3D scene understanding.",
-            "ai_info": {
-                "funding_status": "FUNDED (EPSRC)",
-                "research_match": "90%"
-            }
+            "city": "London",
+            "location": "UK",
+            "type": "Industry",
+            "url": "https://deepmind.com/job/123",
+            "salary": "£60k-80k",
+            "post_date": "2024-12-01",
+            "deadline": "2024-12-31",
+            "cv_required": "Yes",
+            "cover_letter_required": "Optional",
+            "requirements": ["PhD or Masters in ML", "PyTorch experience", "3+ publications"],
+            "expectations": ["Build state-of-the-art models", "Collaborate with researchers"],
+            "ai_summary": "Strong ML role at leading AI research lab...",
         }
     ]
     
