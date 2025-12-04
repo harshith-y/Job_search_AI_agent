@@ -1,0 +1,63 @@
+# Job Search Configuration
+# Focus: UK Machine Learning / AI / Data Science Roles
+
+easy_sites:
+  # ML-specific job boards
+  - name: Machine Learning Jobs UK
+    url: https://machinelearningjobs.co.uk/
+  
+  - name: Jobs.ac.uk ML/AI
+    url: https://www.jobs.ac.uk/search/?keywords=machine+learning+artificial+intelligence&location=United+Kingdom
+  
+  # Top UK Universities (Research roles)
+  - name: University of Cambridge
+    url: https://www.jobs.cam.ac.uk/job/?keywords=machine+learning
+  
+  - name: University of Oxford
+    url: https://www.jobs.ox.ac.uk/home
+  
+  - name: Imperial College London
+    url: https://www.imperial.ac.uk/jobs/search-internal/
+  
+  - name: UCL (University College London)
+    url: https://www.ucl.ac.uk/work-at-ucl/search-ucl-jobs
+  
+  - name: King's College London
+    url: https://www.kcl.ac.uk/jobs/research-jobs
+  
+  - name: University of Edinburgh
+    url: https://www.jobs.ed.ac.uk/
+  
+  # UK Tech Companies / Research Labs
+  - name: DeepMind Careers
+    url: https://www.deepmind.com/careers
+  
+  - name: Stability AI Jobs
+    url: https://stability.ai/careers
+
+medium_sites:
+  # General tech job boards (UK filtered)
+  - name: Glassdoor UK ML
+    url: https://www.glassdoor.co.uk/Job/uk-machine-learning-jobs-SRCH_IL.0,2_IN2_KO3,20.htm
+  
+  - name: Adzuna UK ML
+    url: https://www.adzuna.co.uk/jobs/q-machine-learning
+  
+  - name: Reed.co.uk ML
+    url: https://www.reed.co.uk/jobs/machine-learning-jobs
+  
+  - name: Technojobs UK
+    url: https://www.technojobs.co.uk/jobs/machine-learning
+
+hard_sites:
+  # Require browser automation (not yet implemented)
+  - name: LinkedIn UK ML
+    url: https://www.linkedin.com/jobs/search/?keywords=machine%20learning&location=United%20Kingdom
+  
+  - name: Indeed UK ML
+    url: https://www.indeed.co.uk/jobs?q=machine+learning&l=United+Kingdom
+
+# Notes:
+# - "easy_sites" = Simple HTML scraping (currently implemented)
+# - "medium_sites" = More complex structure (needs custom scrapers)
+# - "hard_sites" = JavaScript-heavy (needs Selenium/Playwright)

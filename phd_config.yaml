@@ -1,0 +1,235 @@
+# PhD Position Search Configuration
+# Focus: UK Machine Learning / AI / Computer Science PhD Positions
+
+# ============================================================================
+# PhD POSITIONS - EASY SITES (High Priority)
+# ============================================================================
+
+phd_easy_sites:
+  # === UK University PhD Portals ===
+  
+  - name: FindAPhD - ML/AI/CS
+    url: https://www.findaphd.com/phds/search/?Keywords=machine+learning+artificial+intelligence&Regions=United+Kingdom
+    notes: "UK's largest PhD database. Very easy to scrape."
+    difficulty: EASY
+    
+  - name: jobs.ac.uk - PhD Positions
+    url: https://www.jobs.ac.uk/search/?keywords=PhD+machine+learning&JobType=Studentship
+    notes: "Academic jobs site. Already have scraper for this!"
+    difficulty: EASY
+  
+  - name: University of Cambridge PhD
+    url: https://www.graduate.study.cam.ac.uk/courses/directory/
+    notes: "Check Computer Science & Engineering departments"
+    difficulty: EASY
+    
+  - name: University of Oxford DPhil
+    url: https://www.ox.ac.uk/admissions/graduate/courses/dphil-computer-science
+    notes: "Oxford calls PhDs 'DPhil'. Check specific department sites."
+    difficulty: EASY
+  
+  - name: Imperial College London PhD
+    url: https://www.imperial.ac.uk/computing/prospective-students/phd/
+    notes: "Department of Computing - active research"
+    difficulty: EASY
+  
+  - name: UCL PhD Opportunities
+    url: https://www.ucl.ac.uk/prospective-students/graduate/research-degrees/computer-science-phd
+    notes: "Strong AI/ML research groups"
+    difficulty: EASY
+  
+  - name: University of Edinburgh PhD
+    url: https://www.ed.ac.uk/informatics/postgraduate/research
+    notes: "Top UK CS program. Check School of Informatics"
+    difficulty: EASY
+  
+  - name: Alan Turing Institute PhD
+    url: https://www.turing.ac.uk/work-turing/studentships
+    notes: "UK's national institute for data science and AI"
+    difficulty: EASY
+  
+  - name: DeepMind PhD Scholarship
+    url: https://www.deepmind.com/careers/university-partnerships
+    notes: "Industry-sponsored PhDs"
+    difficulty: EASY
+
+  # === Research Council Funding ===
+  
+  - name: UKRI - EPSRC Studentships
+    url: https://www.ukri.org/opportunity/
+    notes: "Engineering and Physical Sciences Research Council"
+    difficulty: EASY
+  
+  - name: EPSRC DTP Programmes
+    url: https://epsrc.ukri.org/skills/students/dta/
+    notes: "Doctoral Training Partnerships - check university DTPs"
+    difficulty: EASY
+
+  # === CDT (Centres for Doctoral Training) ===
+  
+  - name: UCL CDT in Foundational AI
+    url: https://www.ucl.ac.uk/foundational-ai-cdt/
+    notes: "4-year funded programme"
+    difficulty: EASY
+  
+  - name: Oxford CDT in AI for Healthcare
+    url: https://www.oxfordhealthai.org/
+    notes: "Bio/health AI focus"
+    difficulty: EASY
+  
+  - name: Edinburgh CDT in Data Science
+    url: https://www.ed.ac.uk/informatics/cdt/data-science
+    notes: "Strong ML/AI component"
+    difficulty: EASY
+  
+  - name: Cambridge CDT in Speech and Language
+    url: https://www.speech.cam.ac.uk/cdt/
+    notes: "NLP/speech focus"
+    difficulty: EASY
+
+  # === European Opportunities ===
+  
+  - name: ELLIS PhD Program
+    url: https://ellis.eu/phd-postdoc
+    notes: "European Lab for Learning and Intelligent Systems"
+    difficulty: EASY
+  
+  - name: Marie Skłodowska-Curie Actions
+    url: https://marie-sklodowska-curie-actions.ec.europa.eu/
+    notes: "EU-funded PhD positions"
+    difficulty: EASY
+
+# ============================================================================
+# PhD POSITIONS - MEDIUM SITES
+# ============================================================================
+
+phd_medium_sites:
+  - name: AcademicJobsOnline
+    url: https://academicjobsonline.org/ajo
+    notes: "International academic positions, some UK PhDs"
+    difficulty: MEDIUM
+  
+  - name: Nature Careers
+    url: https://www.nature.com/naturecareers/jobs/search?location=United+Kingdom&order=relevance
+    notes: "High-quality research positions"
+    difficulty: MEDIUM
+  
+  - name: NewScientist Jobs
+    url: https://jobs.newscientist.com/jobs/artificial-intelligence/in-united-kingdom/
+    notes: "Science-focused job board"
+    difficulty: MEDIUM
+  
+  - name: Thesis.co.uk
+    url: https://www.thesis.co.uk/
+    notes: "Postgrad opportunities including PhDs"
+    difficulty: MEDIUM
+
+# ============================================================================
+# INDIVIDUAL UNIVERSITY DEPARTMENTS (EASY but need individual scrapers)
+# ============================================================================
+
+top_uk_cs_departments:
+  # Russell Group - Top 10 for ML/AI
+  
+  - name: Imperial - Department of Computing
+    url: https://www.imperial.ac.uk/computing/prospective-students/phd/
+    
+  - name: Cambridge - Computer Science & Technology
+    url: https://www.cst.cam.ac.uk/admissions/phd
+    
+  - name: Oxford - Computer Science
+    url: https://www.cs.ox.ac.uk/admissions/graduate/
+    
+  - name: Edinburgh - School of Informatics
+    url: https://www.ed.ac.uk/informatics/postgraduate/research
+    
+  - name: UCL - Computer Science
+    url: https://www.ucl.ac.uk/computer-science/study/postgraduate-research
+  
+  - name: King's College London
+    url: https://www.kcl.ac.uk/informatics/study/postgraduate-research
+  
+  - name: Manchester - Computer Science
+    url: https://www.cs.manchester.ac.uk/study/postgraduate-research/
+  
+  - name: Warwick - Computer Science
+    url: https://warwick.ac.uk/fac/sci/dcs/research/phdstudentships/
+  
+  - name: Bristol - Computer Science
+    url: https://www.bristol.ac.uk/study/postgraduate/research/computer-science/
+  
+  - name: Southampton - Electronics & CS
+    url: https://www.southampton.ac.uk/research/institutes-centres/vision-learning-control
+
+# ============================================================================
+# RESEARCH LABS & INSTITUTES
+# ============================================================================
+
+research_institutes:
+  - name: Alan Turing Institute
+    url: https://www.turing.ac.uk/work-turing/studentships
+    notes: "UK's national AI institute"
+  
+  - name: Ada Lovelace Institute
+    url: https://www.adalovelaceinstitute.org/opportunities/
+    notes: "AI ethics and policy"
+  
+  - name: Centre for Data Ethics and Innovation
+    url: https://www.gov.uk/government/organisations/centre-for-data-ethics-and-innovation
+    notes: "Government AI institute"
+  
+  - name: Turing Gateway to Mathematics
+    url: https://gateway.newton.ac.uk/
+    notes: "Mathematical sciences including ML"
+
+# ============================================================================
+# KEY DIFFERENCES: PhD vs Industry Job Search
+# ============================================================================
+
+phd_search_notes: |
+  === TIMING ===
+  - PhDs typically advertised: September-February for September/October start
+  - Some rolling admissions year-round
+  - Industry: Year-round with peaks in Jan/Feb and Sep/Oct
+  
+  === SOURCES ===
+  - PhDs: University sites, FindAPhD, research council sites
+  - Industry: LinkedIn, Indeed, company career pages
+  
+  === APPLICATION PROCESS ===
+  - PhDs: Research proposal, academic references, potentially need supervisor first
+  - Industry: CV + cover letter, direct application
+  
+  === FUNDING ===
+  - PhDs: Check if funded (stipend + fees) - only apply to funded positions
+  - Industry: Salary negotiations
+  
+  === FILTERING CRITERIA ===
+  - PhDs: Research area match, supervisor expertise, funding status
+  - Industry: Role match, salary, location, company culture
+
+# ============================================================================
+# DUAL SEARCH STRATEGY
+# ============================================================================
+
+dual_search_approach: |
+  Run TWO separate agents with different configurations:
+  
+  AGENT 1: Industry ML Jobs
+  - Sources: machinelearningjobs.co.uk, LinkedIn, company sites
+  - Criteria: Job title, salary, experience level
+  - Notification: Daily at 8 AM
+  - Priority: Immediate opportunities
+  
+  AGENT 2: PhD Positions
+  - Sources: FindAPhD, university sites, CDTs, Alan Turing
+  - Criteria: Research area, funding status, supervisor match
+  - Notification: Daily at 9 AM (or 3x per week)
+  - Priority: Strategic long-term positions
+  
+  WHY SEPARATE?
+  1. Different application timelines
+  2. Different filtering criteria
+  3. Different decision-making processes
+  4. Can prioritize one over the other
+  5. Easier to track and manage
