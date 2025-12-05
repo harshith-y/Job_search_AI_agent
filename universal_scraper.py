@@ -156,13 +156,24 @@ class UniversalJobScraper:
                 print(f"   ⚠️  No jobs found on search page")
                 return []
             
-            print(f"   📋 Found {len(jobs_basic)} job listings")
+            # FILTER OUT aggregator/search result pages (NEW!)
+            jobs_filtered = []
+            for job in jobs_basic:
+                if self._is_aggregator_page(job.get('title', ''), job.get('url', '')):
+                    continue  # Skip aggregator pages
+                jobs_filtered.append(job)
             
-            # STEP 3: Fetch FULL details for each job (THIS IS THE KEY ENHANCEMENT!)
+            if not jobs_filtered:
+                print(f"   ⚠️  No real jobs after filtering")
+                return []
+            
+            print(f"   📋 Found {len(jobs_filtered)} real job listings (filtered out {len(jobs_basic) - len(jobs_filtered)} aggregator pages)")
+            
+            # STEP 3: Fetch FULL details for each job
             jobs_complete = []
-            max_jobs = min(len(jobs_basic), 20)  # Limit to 20 per site
+            max_jobs = min(len(jobs_filtered), 20)  # Limit to 20 per site
             
-            for i, job_basic in enumerate(jobs_basic[:max_jobs], 1):
+            for i, job_basic in enumerate(jobs_filtered[:max_jobs], 1):
                 url = job_basic.get('url')
                 
                 if not url or len(url) < 10:
@@ -180,6 +191,11 @@ class UniversalJobScraper:
                 # Extract better title from full page if needed
                 if full_details.get('title') and len(full_details['title']) > 5:
                     job_complete['title'] = full_details['title']
+                
+                # Double-check it's not an aggregator page
+                if self._is_aggregator_page(job_complete.get('title', ''), job_complete.get('url', '')):
+                    print("⏭️  (aggregator)")
+                    continue
                 
                 # Only add if we got a real title
                 if job_complete.get('title') and len(job_complete['title']) > 5:
@@ -748,6 +764,72 @@ class UniversalJobScraper:
         elif 'cover letter' in text or 'covering letter' in text:
             return 'Likely'
         return 'Not specified'
+    
+    def _is_aggregator_page(self, title, url):
+        """
+        Detect if this is a job aggregator/search result page (not a real job)
+        
+        Examples of aggregator pages:
+        - "6,000+ Machine Learning Engineer jobs in United Kingdom"
+        - "3,000+ Machine Learning jobs in London"
+        - "1,000+ Junior Machine Learning jobs"
+        """
+        
+        if not title:
+            return False
+        
+        title_lower = title.lower()
+        
+        # Pattern 1: "X,000+ jobs" or "X jobs" in title
+        aggregator_patterns = [
+            r'\d{1,3},?\d{3}\+\s+.*jobs',  # "6,000+ Machine Learning jobs"
+            r'\d{1,3},?\d{3}\s+.*jobs',    # "318 Reinforcement Learning jobs"
+            r'\d+\+\s+.*jobs',              # "100+ jobs"
+            r'\d+k\+\s+.*jobs',             # "10k+ jobs"
+        ]
+        
+        for pattern in aggregator_patterns:
+            if re.search(pattern, title_lower):
+                return True
+        
+        # Pattern 2: Title ends with "jobs in [location]"
+        if re.search(r'jobs\s+in\s+(united kingdom|london|uk|england)', title_lower):
+            return True
+        
+        # Pattern 3: LinkedIn/Indeed/Glassdoor search result pages
+        aggregator_urls = [
+            '/jobs/search',
+            '/jobs?q=',
+            '/jobs-list',
+            '/search/jobs',
+            'indeed.com/jobs?',
+            'linkedin.com/jobs/search',
+            'glassdoor.com/Job/',
+        ]
+        
+        for agg_url in aggregator_urls:
+            if agg_url in url.lower():
+                return True
+        
+        # Pattern 4: Titles that are clearly search results
+        bad_phrases = [
+            'jobs in',
+            'job openings',
+            'job search',
+            'find jobs',
+            'browse jobs',
+            'search results',
+            'job listings',
+        ]
+        
+        # Only flag if title is SHORT and contains these phrases
+        # (Real job titles can contain "jobs in X" but are usually longer)
+        if len(title) < 100:
+            for phrase in bad_phrases:
+                if phrase in title_lower and 'jobs' in title_lower:
+                    return True
+        
+        return False
 
 
 # Main function

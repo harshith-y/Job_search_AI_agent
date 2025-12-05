@@ -1,158 +1,176 @@
-# Job Search Configuration - FIXED URLS
-# Updated URLs that work + removed blocked sites
+##############################################################################
+# JOB SEARCH CONFIGURATION - DISCOVERY APPROACH
+# Focus: Find hidden opportunities by scraping company career pages directly
+##############################################################################
 
-# ============================================================================
-# WORKING SCRAPERS (Tested and working)
-# ============================================================================
-easy_sites:
-  - name: "Jobs.ac.uk ML"
-    url: "https://www.jobs.ac.uk/search/?keywords=machine+learning&location=United+Kingdom"
-    notes: "UK academic and research ML jobs - WORKING"
-    
-  - name: "LinkedIn Jobs"
-    url: "https://www.linkedin.com/jobs/search/?keywords=machine%20learning%20uk&location=United%20Kingdom"
-    notes: "Professional network - WORKING (found 59 jobs!)"
-
-# ============================================================================
-# MEDIUM DIFFICULTY (Some working, some need URL fixes)
-# ============================================================================
-medium_sites:
-  # WORKING:
-  - name: "University of Oxford"
-    url: "https://www.jobs.ox.ac.uk/home?keywords=machine+learning"
-    notes: "Oxford ML research - WORKING (found 6 jobs)"
-    
-  - name: "Queen Mary University"
-    url: "https://www.qmul.ac.uk/jobs/vacancies/?q=machine+learning"
-    notes: "QMUL ML positions - WORKING (found 30 jobs!)"
-  
-  # NEED URL FIXES (404 errors):
-  # - name: "Imperial College London"
-  #   url: "https://www.imperial.ac.uk/jobs/search/?q=machine+learning"
-  #   notes: "BROKEN - needs new URL"
-  
-  # - name: "UCL (University College London)"
-  #   url: "https://www.ucl.ac.uk/work-at-ucl/search-ucl-jobs?q=machine+learning"
-  #   notes: "BROKEN - needs new URL"
-  
-  # - name: "University of Cambridge"
-  #   url: "https://www.jobs.cam.ac.uk/job/-/all/?search=machine+learning"
-  #   notes: "BROKEN - needs new URL"
-  
-  - name: "King's College London"
-    url: "https://www.kcl.ac.uk/jobs/research-jobs?q=machine+learning"
-    notes: "KCL research jobs - Needs testing"
-    
-  - name: "University of Edinburgh"
-    url: "https://www.ed.ac.uk/jobs?keywords=machine+learning"
-    notes: "Edinburgh AI/ML jobs - Needs testing"
-
-# ============================================================================
-# BLOCKED SITES (403 Forbidden - Remove for now)
-# ============================================================================
-# These sites actively block scraping. Use Google Search instead.
-# Google Search finds jobs from these sites anyway!
-
-# hard_sites:
-#   - name: "Indeed UK ML"
-#     url: "https://www.indeed.co.uk/jobs?q=machine+learning&l=United+Kingdom"
-#     notes: "BLOCKED - Use Google Search instead"
-#   
-#   - name: "Glassdoor UK ML"
-#     url: "https://www.glassdoor.co.uk/Job/uk-machine-learning-jobs-SRCH_IL.0,2_IN2_KO3,20.htm"
-#     notes: "BLOCKED - Use Google Search instead"
-#   
-#   - name: "LinkedIn Jobs"
-#     url: "https://www.linkedin.com/jobs/search/?keywords=machine%20learning%20uk"
-#     notes: "Sometimes blocks - but currently working!"
-
-# ============================================================================
-# COMPANY-SPECIFIC PAGES (To add when URLs are found)
-# ============================================================================
-company_pages:
-  # Add these later when you find the correct career page URLs
-  # - name: "DeepMind Careers"
-  #   url: "https://www.deepmind.com/careers"
-  # - name: "Stability AI Jobs"
-  #   url: "https://stability.ai/careers"
-
-# ============================================================================
-# PHD POSITION SOURCES
-# ============================================================================
-phd_sources:
-  - name: "FindAPhD ML UK"
-    url: "https://www.findaphd.com/phds/?Keywords=machine+learning&Locations%5B%5D=United+Kingdom"
-    notes: "PhD positions database"
-    
-  - name: "Jobs.ac.uk PhDs"
-    url: "https://www.jobs.ac.uk/search/?keywords=phd+machine+learning&location=United+Kingdom"
-    notes: "Academic PhD positions"
-
-# ============================================================================
-# GOOGLE SEARCH (Backup - finds Indeed/Glassdoor jobs!)
-# ============================================================================
-google_search:
-  enabled: true
-  notes: "Finds jobs from Indeed, Glassdoor, and other blocked sites"
-  
-  industry_queries:
-    # These find jobs from blocked sites!
-    - "machine learning engineer jobs UK site:linkedin.com"
-    - "ML engineer UK site:indeed.co.uk"
-    - "AI engineer UK site:glassdoor.co.uk"
-    - "research scientist AI UK"
-    - "computer vision engineer London UK"
-    - "NLP engineer jobs UK 2024"
-  
-  phd_queries:
-    - "PhD machine learning UK funded 2025"
-    - "PhD computer vision UK studentship"
-    - "EPSRC PhD machine learning UK"
-
-# ============================================================================
-# SETTINGS
-# ============================================================================
 settings:
-  # Which groups to scrape
-  scrape_easy: true
-  scrape_medium: true
-  scrape_hard: false        # Disabled (blocked sites)
-  scrape_company_pages: false  # Disabled until URLs added
-  scrape_phd_sources: true
-  use_google_search: true    # IMPORTANT - finds blocked sites!
-  
-  # Timing
-  delay_between_sites: 2
-  request_timeout: 15
-  
-  # Filtering
-  deduplicate_by_url: true
-  min_job_title_length: 10
+  scrape_hard: false
+  use_google_search: true
+  max_jobs_per_site: 20
 
-# ============================================================================
-# NOTES
-# ============================================================================
-# 
-# WORKING SOURCES (Found jobs):
-# ✅ LinkedIn - 59 jobs
-# ✅ Queen Mary - 30 jobs  
-# ✅ Oxford - 6 jobs
-# ✅ Google Search - 40 jobs
-# Total: 133 jobs (not bad!)
-#
-# BLOCKED SOURCES (403 Forbidden):
-# ❌ Indeed - Use Google Search instead
-# ❌ Glassdoor - Use Google Search instead
-# Note: Google Search finds these jobs anyway!
-#
-# BROKEN URLS (404 Not Found):
-# ❌ Imperial College - Need to find new URL
-# ❌ UCL - Need to find new URL  
-# ❌ Cambridge - Need to find new URL
-#
-# TO ADD LATER:
-# - Company career pages (DeepMind, Anthropic, etc.)
-# - More university job boards
-# - Specialist ML job sites
-#
-# ============================================================================
+
+##############################################################################
+# DIRECT COMPANY CAREER PAGES (Hidden Gems!)
+##############################################################################
+
+easy_sites:
+  # ============================
+  # TRANSLATIONAL RESEARCH (Like LifeArc!)
+  # ============================
+  - name: LifeArc Careers
+    url: https://lifearc.org/careers/
+    notes: "Translational research - only posts on own site!"
+    
+  - name: Wellcome Trust Jobs
+    url: https://wellcome.org/jobs
+    notes: "Biomedical research charity"
+  
+  # ============================
+  # BIOTECH COMPANIES (Hidden gems)
+  # ============================
+  - name: Oxford Nanopore Careers
+    url: https://nanoporetech.com/careers
+    notes: "Genomics sequencing company"
+    
+  - name: BenevolentAI Careers
+    url: https://benevolent.ai/careers
+    notes: "AI drug discovery"
+    
+  - name: Healx Careers
+    url: https://healx.io/careers/
+    notes: "Rare disease AI"
+  
+  # ============================
+  # MEDTECH / HEALTHCARE AI
+  # ============================
+  - name: Kheiron Medical Careers
+    url: https://www.kheironmed.com/careers
+    notes: "AI medical imaging"
+    
+  - name: Babylon Health Careers
+    url: https://www.babylonhealth.com/careers
+    notes: "Digital health platform"
+  
+  # ============================
+  # GRADUATE SCHEME SPECIFIC PAGES
+  # ============================
+  - name: Cambridge Consultants Graduates
+    url: https://www.cambridgeconsultants.com/careers/graduates
+    notes: "Direct graduate scheme page!"
+    
+  - name: GSK Early Talent
+    url: https://www.gsk.com/en-gb/careers/early-talent-programmes/
+    notes: "GSK grad schemes"
+    
+  - name: AstraZeneca Early Talent
+    url: https://careers.astrazeneca.com/early-talent
+    notes: "AZ grad schemes"
+    
+  - name: Dyson Early Careers
+    url: https://careers.dyson.com/early-careers/
+    notes: "Dyson grad programmes"
+  
+  # ============================
+  # GRADUATE SCHEME AGGREGATORS
+  # ============================
+  - name: TargetJobs Graduate Schemes
+    url: https://targetjobs.co.uk/graduate-schemes
+    notes: "Graduate scheme listings"
+    
+  - name: Prospects Graduate Jobs
+    url: https://www.prospects.ac.uk/graduate-jobs
+    notes: "UK graduate jobs"
+    
+  - name: GradCracker
+    url: https://www.gradcracker.com/search/engineering-graduate-jobs
+    notes: "STEM graduate jobs"
+  
+  # ============================
+  # BIOTECH/PHARMA JOB BOARDS
+  # ============================
+  - name: BioSpace UK
+    url: https://www.biospace.com/jobs/?l=United+Kingdom&q=graduate
+    notes: "Biotech/pharma - grad roles"
+    
+  - name: Nature Careers
+    url: https://www.nature.com/naturecareers/jobs/search?locations=United%20Kingdom&keywords=graduate
+    notes: "Scientific jobs - grad focus"
+  
+  # ============================
+  # ACADEMIC (Selective)
+  # ============================
+  - name: Jobs.ac.uk Graduate Schemes
+    url: https://www.jobs.ac.uk/search/?keywords=graduate+scheme&location=United+Kingdom
+    notes: "Academic grad schemes"
+    
+  - name: Jobs.ac.uk ML (Non-PostDoc)
+    url: https://www.jobs.ac.uk/search/?keywords=machine+learning+-postdoc&location=United+Kingdom
+    notes: "ML excluding PostDocs"
+
+
+medium_sites: []
+
+hard_sites: []
+
+
+##############################################################################
+# GOOGLE SEARCH QUERIES - DISCOVERY FOCUSED
+##############################################################################
+
+google_search_queries:
+  # COMPANY DISCOVERY (Find hidden gems)
+  discovery:
+    - "best biotech companies to work for UK"
+    - "healthcare AI startups London hiring"
+    - "medical device companies UK careers"
+    - "translational research jobs UK"
+    - "computational biology companies Cambridge"
+    - "biotech scale-ups UK hiring"
+  
+  # GRADUATE SCHEMES (Specific)
+  graduate_schemes:
+    - "graduate scheme 2025 UK biotech"
+    - "graduate programme engineering UK 2025"
+    - "early careers programme UK technology"
+    - "graduate rotation UK pharmaceutical"
+    - "graduate trainee UK healthcare"
+    - "technology graduate scheme UK 2025"
+  
+  # DIRECT COMPANY PAGES
+  company_pages:
+    - "site:lifearc.org careers"
+    - "site:oxfordnanopore.com careers graduate"
+    - "site:benevolent.ai careers"
+    - "site:cambridgeconsultants.com graduate"
+    - "site:paconsulting.com graduate"
+  
+  # INDUSTRY ROLES
+  industry:
+    - "junior machine learning engineer UK -senior"
+    - "entry level data scientist UK biotech"
+    - "graduate biomedical engineer UK"
+    - "ML engineer healthcare UK -senior -lead"
+  
+  # PhD (Backup)
+  phd:
+    - "PhD machine learning UK funded"
+    - "PhD computational biology UK"
+
+
+##############################################################################
+# ADDITIONAL DISCOVERY RESOURCES (For manual check)
+##############################################################################
+
+# These should be checked manually (can't scrape easily):
+# - Otta.com (UK startup jobs)
+# - Wellfound.com (Global startups, UK filter)
+# - Company LinkedIn pages
+# - Glassdoor (company-specific)
+
+# Industry Directories (use to find more companies):
+# - BioIndustry Association (BIA) directory
+# - UK BioHub company database
+# - Crunchbase (Healthcare + Biotech + UK)
+# - Digital Health London members
+# - HealthTech UK members
+# - NHS AI Lab directory
