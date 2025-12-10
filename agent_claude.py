@@ -1,6 +1,11 @@
 """
 Job Filtering Agent using Claude (Anthropic API)
 Uses Claude Sonnet 4 for both industry jobs AND PhD positions
+
+NOW WITH LEARNING:
+- Loads learned preferences from agency/preference_learner.py
+- Combines static preferences with dynamically learned patterns
+- Adapts filtering based on user's like/dislike history
 """
 
 import anthropic
@@ -11,17 +16,39 @@ load_dotenv()
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 
+def _get_learned_preferences():
+    """
+    Load learned preferences from the agency module.
+    Returns empty values if agency module not available.
+    """
+    try:
+        from agency.preference_learner import PreferenceLearner
+        learner = PreferenceLearner()
+        return {
+            'notes': learner.get_dynamic_notes(),
+            'strictness': learner.get_strictness_recommendation(),
+            'summary': learner.get_learning_summary()
+        }
+    except ImportError:
+        # Agency module not installed yet
+        return {'notes': '', 'strictness': None, 'summary': {}}
+    except Exception as e:
+        print(f"   (Note: Could not load learned preferences: {e})")
+        return {'notes': '', 'strictness': None, 'summary': {}}
+
+
 def filter_industry_job(job):
     """
     Filter industry ML/AI jobs using Claude Sonnet 4
     Uses personalized preferences from user_preferences.py
+    NOW WITH: Dynamic learned preferences from user feedback
     """
-    
+
     # Load user preferences
     try:
         from user_preferences import (
-            INDUSTRY_PREFERENCES, 
-            USER_PROFILE, 
+            INDUSTRY_PREFERENCES,
+            USER_PROFILE,
             PERSONALIZATION_NOTES,
             FILTERING_CONFIG
         )
@@ -35,15 +62,24 @@ def filter_industry_job(job):
         USER_PROFILE = {"current_level": "Entry-Level", "location_preferences": ["UK"]}
         PERSONALIZATION_NOTES = ""
         FILTERING_CONFIG = {"industry_strictness": "moderate"}
-    
+
+    # Load learned preferences (from user feedback)
+    learned = _get_learned_preferences()
+
     # Build personalized prompt
     target_roles = INDUSTRY_PREFERENCES.get("target_roles", [])
     avoid_roles = INDUSTRY_PREFERENCES.get("avoid_roles", [])
     preferred_tech = INDUSTRY_PREFERENCES.get("preferred_tech", [])
     research_interests = INDUSTRY_PREFERENCES.get("research_interests", [])
     red_flags = INDUSTRY_PREFERENCES.get("red_flags", [])
-    
-    strictness = FILTERING_CONFIG.get("industry_strictness", "moderate")
+
+    # Use learned strictness if available, otherwise use config
+    strictness = learned.get('strictness') or FILTERING_CONFIG.get("industry_strictness", "moderate")
+
+    # Combine static and learned personalization notes
+    combined_notes = PERSONALIZATION_NOTES
+    if learned.get('notes'):
+        combined_notes = f"{PERSONALIZATION_NOTES}\n\n{learned['notes']}"
     
     prompt = f"""
 You are an AI assistant helping filter industry ML/AI jobs for a specific person.
@@ -76,7 +112,7 @@ RED FLAGS (automatic reject if present):
 {chr(10).join(f"- {flag}" for flag in red_flags)}
 
 PERSONALIZATION NOTES:
-{PERSONALIZATION_NOTES}
+{combined_notes}
 
 STRICTNESS: {strictness}
 - strict: Only perfect matches with all preferred criteria
@@ -126,8 +162,9 @@ def filter_phd_position(position):
     """
     Filter PhD positions using Claude Sonnet 4
     Uses personalized preferences from user_preferences.py
+    NOW WITH: Dynamic learned preferences from user feedback
     """
-    
+
     # Load user preferences
     try:
         from user_preferences import (
@@ -145,15 +182,24 @@ def filter_phd_position(position):
         USER_PROFILE = {"location_preferences": ["UK"]}
         PERSONALIZATION_NOTES = ""
         FILTERING_CONFIG = {"phd_strictness": "moderate"}
-    
+
+    # Load learned preferences (from user feedback)
+    learned = _get_learned_preferences()
+
     # Build personalized prompt
     research_areas = PHD_PREFERENCES.get("research_areas", [])
     avoid_areas = PHD_PREFERENCES.get("avoid_areas", [])
     must_be_funded = PHD_PREFERENCES.get("funding", {}).get("must_be_funded", True)
     preferred_unis = PHD_PREFERENCES.get("preferred_universities", [])
     red_flags = PHD_PREFERENCES.get("red_flags", [])
-    
-    strictness = FILTERING_CONFIG.get("phd_strictness", "moderate")
+
+    # Use learned strictness if available, otherwise use config
+    strictness = learned.get('strictness') or FILTERING_CONFIG.get("phd_strictness", "moderate")
+
+    # Combine static and learned personalization notes
+    combined_notes = PERSONALIZATION_NOTES
+    if learned.get('notes'):
+        combined_notes = f"{PERSONALIZATION_NOTES}\n\n{learned['notes']}"
     
     prompt = f"""
 You are an AI assistant helping filter PhD positions in Machine Learning/AI for a specific person.
@@ -186,7 +232,7 @@ RED FLAGS (automatic reject):
 {chr(10).join(f"- {flag}" for flag in red_flags)}
 
 PERSONALIZATION NOTES:
-{PERSONALIZATION_NOTES}
+{combined_notes}
 
 STRICTNESS: {strictness}
 - strict: Perfect research area match + confirmed funding

@@ -2,6 +2,11 @@
 """
 Main Job Search Script
 Uses Universal Scraper + Google Search + Claude Filtering + GUI Review
+
+NOW WITH AGENCY:
+- Deadline monitoring for liked jobs
+- Learning status display
+- Strategy recommendations
 """
 
 import sys
@@ -13,20 +18,81 @@ from tracker import EnhancedJobTracker
 from review_gui import start_review_server
 
 
+def _check_deadline_alerts(tracker):
+    """Check and display deadline alerts for liked/maybe jobs."""
+    try:
+        from agency.deadline_monitor import DeadlineMonitor
+
+        monitor = DeadlineMonitor(tracker.jobs)
+        alerts = monitor.get_urgent_alerts(max_days=5)
+
+        if alerts:
+            print("!" * 70)
+            print("DEADLINE ALERTS - Jobs you liked need action!")
+            print("!" * 70)
+            for alert in alerts[:5]:  # Show top 5
+                status_icon = "+" if alert['status'] == 'liked' else "?"
+                print(f"  [{status_icon}] {alert['job_title'][:45]}")
+                print(f"      @ {alert['company']} - {alert['days_remaining']} days left!")
+            print("!" * 70 + "\n")
+    except ImportError:
+        pass  # Agency module not installed
+    except Exception:
+        pass  # Silent fail
+
+
+def _show_learning_status():
+    """Show learning status and accuracy trend."""
+    try:
+        from agency.preference_learner import PreferenceLearner
+        from agency.accuracy_tracker import AccuracyTracker
+
+        learner = PreferenceLearner()
+        summary = learner.get_learning_summary()
+
+        if summary.get('has_learned_data'):
+            print("-" * 50)
+            print("LEARNING STATUS")
+            print("-" * 50)
+
+            stats = summary.get('stats', {})
+            print(f"  Total feedback: {stats.get('total_feedback_processed', 0)} jobs reviewed")
+            print(f"  Current precision: {stats.get('precision', 0):.0%}")
+
+            strictness = summary.get('strictness', {})
+            print(f"  Recommended strictness: {strictness.get('recommended', 'moderate')}")
+
+            # Get trend
+            accuracy_tracker = AccuracyTracker()
+            trend = accuracy_tracker.get_accuracy_trend()
+            print(f"  Accuracy trend: {trend.get('message', 'Establishing baseline')}")
+            print("-" * 50 + "\n")
+    except ImportError:
+        pass  # Agency module not installed
+    except Exception:
+        pass  # Silent fail
+
+
 def main(search_type="both"):
     """
     Main job search function
-    
+
     Args:
         search_type: "industry", "phd", or "both"
     """
-    
+
     print("\n" + "="*70)
-    print("🎯 JOB SEARCH AGENT - UNIVERSAL SCRAPER EDITION")
+    print("JOB SEARCH AGENT - WITH LEARNING")
     print("="*70 + "\n")
-    
+
     all_relevant_jobs = []
     tracker = EnhancedJobTracker()
+
+    # Check deadline alerts first (Level 2 agency)
+    _check_deadline_alerts(tracker)
+
+    # Show learning status (Level 1 agency)
+    _show_learning_status()
     
     # ========================================================================
     # INDUSTRY JOBS
