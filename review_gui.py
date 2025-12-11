@@ -579,6 +579,69 @@ PROFESSIONAL_TEMPLATE = """
             color: var(--text-muted);
         }
 
+        .export-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .export-btn.excel {
+            background: #1D6F42;
+            color: white;
+            border-color: #1D6F42;
+        }
+
+        .export-btn.excel:hover {
+            background: #165c36;
+        }
+
+        .export-btn.sheets {
+            background: #0F9D58;
+            color: white;
+            border-color: #0F9D58;
+        }
+
+        .export-btn.sheets:hover {
+            background: #0d8a4d;
+        }
+
+        .export-btn .icon {
+            font-size: 18px;
+        }
+
+        .sync-status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .sync-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .sync-status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
         /* === RESPONSIVE === */
         @media (max-width: 480px) {
             .app-container {
@@ -622,8 +685,24 @@ PROFESSIONAL_TEMPLATE = """
                     <div class="stat-label">Passed</div>
                 </div>
             </div>
+
+            <div class="export-buttons">
+                <a href="/export/excel" class="export-btn excel">
+                    <span class="icon">📊</span> Export to Excel
+                </a>
+                <a href="/export/sheets" class="export-btn sheets">
+                    <span class="icon">📋</span> Sync to Google Sheets
+                </a>
+            </div>
+
+            {% if sync_status %}
+            <div class="sync-status {{ 'success' if sync_success else 'error' }}">
+                {{ sync_status }}
+            </div>
+            {% endif %}
+
             <p class="completion-note">
-                Saved to spreadsheet. Learning from your preferences...
+                Learning from your preferences...
             </p>
         </div>
         {% else %}
@@ -871,24 +950,30 @@ PROFESSIONAL_TEMPLATE = """
 def index():
     """Show current job for review"""
 
+    # Check for sync status message from export redirects
+    sync_status = request.args.get('sync_status')
+    sync_success = request.args.get('sync_success') == '1'
+
     if current_index[0] >= len(current_jobs):
         # Review complete
         liked = len([j for j in current_jobs if tracker.jobs.get(j['url'], {}).get('status') == 'liked'])
         maybe = len([j for j in current_jobs if tracker.jobs.get(j['url'], {}).get('status') == 'maybe'])
         passed = len([j for j in current_jobs if tracker.jobs.get(j['url'], {}).get('status') == 'disliked'])
 
-        # Export to spreadsheet
-        tracker.export_to_excel_fancy()
-
-        # TRIGGER LEARNING - This is the key feedback loop!
-        _trigger_learning()
+        # Export to spreadsheet on first completion (not on redirect back from export)
+        if not sync_status:
+            tracker.export_to_excel_fancy()
+            # TRIGGER LEARNING - This is the key feedback loop!
+            _trigger_learning()
 
         return render_template_string(
             PROFESSIONAL_TEMPLATE,
             complete=True,
             liked_count=liked,
             maybe_count=maybe,
-            passed_count=passed
+            passed_count=passed,
+            sync_status=sync_status,
+            sync_success=sync_success
         )
 
     job = current_jobs[current_index[0]]
@@ -993,6 +1078,45 @@ def undo_action():
             tracker.jobs[job['url']]['status'] = 'new'
 
     return redirect('/')
+
+
+@app.route('/export/excel')
+def export_excel():
+    """Export jobs to Excel spreadsheet"""
+
+    try:
+        filename = tracker.export_to_excel_fancy()
+        return redirect(f'/?sync_status=Exported to {filename}&sync_success=1')
+    except Exception as e:
+        return redirect(f'/?sync_status=Excel export failed: {str(e)}&sync_success=0')
+
+
+@app.route('/export/sheets')
+def export_sheets():
+    """Sync jobs to Google Sheets"""
+
+    try:
+        from google_sheets import sync_to_google_sheets
+
+        result = sync_to_google_sheets(tracker.jobs)
+
+        if result.get('success'):
+            sheet_url = result.get('sheet_url', '')
+            new_jobs = result.get('new_jobs', 0)
+            msg = f"Synced {new_jobs} new jobs to Google Sheets"
+            if sheet_url:
+                # Open the Google Sheet in a new tab
+                import webbrowser
+                webbrowser.open(sheet_url, new=2)
+            return redirect(f'/?sync_status={msg}&sync_success=1')
+        else:
+            error = result.get('error', 'Unknown error')
+            return redirect(f'/?sync_status={error}&sync_success=0')
+
+    except ImportError:
+        return redirect('/?sync_status=Google Sheets not configured. Run: python google_sheets.py setup&sync_success=0')
+    except Exception as e:
+        return redirect(f'/?sync_status=Google Sheets sync failed: {str(e)}&sync_success=0')
 
 
 def open_browser_explicitly(url):

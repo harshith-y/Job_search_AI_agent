@@ -38,4 +38,8 @@ openpyxl>=3.1.0
 # For web GUI (Flask)
 Flask>=3.0.0
 
+# Google Sheets integration (optional)
+gspread>=6.0.0
+google-auth>=2.0.0
+
 # Note: You can comment out packages you don't need to keep environment lightweight

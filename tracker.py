@@ -19,8 +19,8 @@ from openpyxl.utils import get_column_letter
 
 class EnhancedJobTracker:
     """Enhanced job tracker with detailed information and fancy Excel export"""
-    
-    def __init__(self, filename="job_tracker_enhanced.json"):
+
+    def __init__(self, filename="job_tracker.json"):
         self.filename = filename
         self.jobs = self.load()
     
@@ -86,7 +86,7 @@ class EnhancedJobTracker:
         """Get all jobs with specific status"""
         return [job for job in self.jobs.values() if job["status"] == status]
     
-    def export_to_excel_fancy(self, filename="job_applications_enhanced.xlsx"):
+    def export_to_excel_fancy(self, filename="job_applications.xlsx"):
         """
         Export to Excel with Google Sheets-style formatting:
         - Dark green header with filters

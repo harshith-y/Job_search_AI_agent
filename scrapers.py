@@ -1,11 +1,11 @@
 """
-Integrated Job Scrapers - ENHANCED VERSION
-Uses BOTH direct site scraping AND Google Search for comprehensive coverage
-Now with:
-- Better search queries targeting actual job postings
+Integrated Job Scrapers - Google Search Edition
+Uses Google Custom Search API for job discovery with:
+- Targeted search queries for actual job postings
 - URL validation to filter out aggregator/search pages
+- Detail fetching from job URLs for richer data
 - Quality scoring for better results
-- Full detail extraction for all results
+- Configurable search preferences
 """
 
 import os
@@ -13,10 +13,192 @@ import re
 import json
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from universal_scraper import UniversalJobScraper, scrape_all_sites
 import requests
+from bs4 import BeautifulSoup
 
 load_dotenv()
+
+
+# ============================================================================
+# JOB DETAIL FETCHER - Scrape full details from job URLs
+# ============================================================================
+
+def fetch_job_details(url, timeout=10):
+    """
+    Fetch full job details from a URL by scraping the page.
+
+    Extracts:
+    - Title, Company, Location
+    - Salary information
+    - Deadline/closing date
+    - Requirements and qualifications
+    - Full description
+
+    Returns a dict with extracted fields (empty strings for missing data).
+    """
+    details = {
+        'title': '',
+        'company': '',
+        'location': '',
+        'city': '',
+        'salary': 'Not specified',
+        'deadline': 'Not specified',
+        'requirements': [],
+        'expectations': [],
+        'description': '',
+        'cv_required': 'Not specified',
+        'cover_letter_required': 'Not specified',
+    }
+
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-GB,en;q=0.9',
+        }
+
+        response = requests.get(url, headers=headers, timeout=timeout)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, 'html.parser')
+        text_content = soup.get_text(separator=' ', strip=True).lower()
+
+        # === TITLE ===
+        # Try common title selectors
+        title_selectors = [
+            'h1.job-title', 'h1.posting-title', 'h1[class*="title"]',
+            '.job-title h1', '.posting-headline h1', 'h1'
+        ]
+        for selector in title_selectors:
+            elem = soup.select_one(selector)
+            if elem and len(elem.get_text(strip=True)) > 5:
+                details['title'] = elem.get_text(strip=True)[:200]
+                break
+
+        # === COMPANY ===
+        company_selectors = [
+            '.company-name', '.employer-name', '[class*="company"]',
+            '[class*="employer"]', '.organization'
+        ]
+        for selector in company_selectors:
+            elem = soup.select_one(selector)
+            if elem and len(elem.get_text(strip=True)) > 1:
+                details['company'] = elem.get_text(strip=True)[:100]
+                break
+
+        # === LOCATION ===
+        location_selectors = [
+            '.location', '[class*="location"]', '.job-location',
+            '[class*="city"]', '.address'
+        ]
+        for selector in location_selectors:
+            elem = soup.select_one(selector)
+            if elem and len(elem.get_text(strip=True)) > 1:
+                location_text = elem.get_text(strip=True)[:100]
+                details['location'] = location_text
+                # Try to extract city
+                if ',' in location_text:
+                    details['city'] = location_text.split(',')[0].strip()
+                break
+
+        # === SALARY ===
+        salary_patterns = [
+            r'£[\d,]+\s*[-–to]+\s*£[\d,]+',  # £50,000 - £70,000
+            r'£[\d,]+\s*(?:pa|per annum|per year|annually)?',  # £50,000 pa
+            r'\$[\d,]+\s*[-–to]+\s*\$[\d,]+',  # $50,000 - $70,000
+            r'salary[:\s]+£?[\d,]+',  # Salary: £50,000
+            r'(?:stipend|funding)[:\s]+£?[\d,]+',  # For PhDs
+        ]
+        for pattern in salary_patterns:
+            match = re.search(pattern, text_content, re.IGNORECASE)
+            if match:
+                details['salary'] = match.group(0).strip()
+                break
+
+        # === DEADLINE ===
+        # More comprehensive deadline patterns
+        deadline_patterns = [
+            # "Deadline: 15 January 2025" or "Closing date: 15/01/2025"
+            r'(?:deadline|closing date|closes?|apply by|applications?\s*close)[:\s]+(\d{1,2}[\s/-]\w+[\s/-]\d{2,4})',
+            r'(?:deadline|closing date|closes?|apply by)[:\s]+(\w+\s+\d{1,2},?\s+\d{4})',
+            # Standalone dates: "15 January 2025"
+            r'(\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4})',
+            # "January 15, 2025"
+            r'((?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4})',
+            # ISO format: "2025-01-15"
+            r'(?:deadline|closing)[:\s]*(\d{4}-\d{2}-\d{2})',
+            # UK format: "15/01/2025" near deadline keywords
+            r'(?:deadline|closing|apply by)[:\s]*(\d{1,2}/\d{1,2}/\d{4})',
+            # "Applications close on 15th January"
+            r'applications?\s+close\s+(?:on\s+)?(\d{1,2}(?:st|nd|rd|th)?\s+\w+(?:\s+\d{4})?)',
+        ]
+        for pattern in deadline_patterns:
+            match = re.search(pattern, text_content, re.IGNORECASE)
+            if match:
+                deadline_str = match.group(1).strip() if match.lastindex else match.group(0).strip()
+                # Clean up ordinal suffixes
+                deadline_str = re.sub(r'(\d+)(?:st|nd|rd|th)', r'\1', deadline_str)
+                details['deadline'] = deadline_str
+                break
+
+        # === POST DATE (to detect old jobs) ===
+        post_date_patterns = [
+            r'(?:posted|published|listed)[:\s]+(\d{1,2}[\s/-]\w+[\s/-]\d{2,4})',
+            r'(?:posted|published)[:\s]+(\w+\s+\d{1,2},?\s+\d{4})',
+            r'(\d+)\s*(?:days?|weeks?|months?)\s+ago',
+        ]
+        for pattern in post_date_patterns:
+            match = re.search(pattern, text_content, re.IGNORECASE)
+            if match:
+                details['post_date'] = match.group(0).strip()
+                break
+
+        # === REQUIREMENTS ===
+        # Look for requirement sections
+        requirements = []
+        req_headers = soup.find_all(['h2', 'h3', 'h4', 'strong', 'b'],
+                                     string=re.compile(r'requirement|qualification|experience|skills|criteria', re.I))
+        for header in req_headers[:2]:  # Limit to first 2 sections
+            # Get the next sibling list or paragraphs
+            next_elem = header.find_next(['ul', 'ol'])
+            if next_elem:
+                items = next_elem.find_all('li')[:8]  # Limit items
+                for item in items:
+                    text = item.get_text(strip=True)
+                    if 5 < len(text) < 200:
+                        requirements.append(text)
+
+        if requirements:
+            details['requirements'] = requirements[:6]  # Max 6 requirements
+
+        # === DESCRIPTION ===
+        # Get main content area
+        content_selectors = [
+            '.job-description', '.posting-description', '[class*="description"]',
+            '.content', 'article', 'main'
+        ]
+        for selector in content_selectors:
+            elem = soup.select_one(selector)
+            if elem:
+                desc = elem.get_text(separator=' ', strip=True)
+                if len(desc) > 100:
+                    details['description'] = desc[:2000]
+                    break
+
+        # === CV/COVER LETTER ===
+        if any(phrase in text_content for phrase in ['cv required', 'resume required', 'upload cv', 'attach cv']):
+            details['cv_required'] = 'Yes'
+        if any(phrase in text_content for phrase in ['cover letter required', 'covering letter', 'letter of motivation']):
+            details['cover_letter_required'] = 'Yes'
+
+    except requests.RequestException as e:
+        # Silently fail - we'll use what we have from Google
+        pass
+    except Exception as e:
+        # Silently fail for parsing errors
+        pass
+
+    return details
 
 # Cache file for intermediate results (allows resuming after crashes)
 CACHE_FILE = "job_search_cache.json"
@@ -310,10 +492,104 @@ def is_valid_job_url(url, title=""):
     return True, "Default accept"
 
 
+def is_job_from_past_year(job):
+    """
+    Check if a job appears to be from a past year (2024 or earlier).
+    Returns (is_old, reason) tuple.
+    """
+    current_year = datetime.now().year
+    past_years = [str(y) for y in range(2020, current_year)]  # 2020-2024
+
+    title = (job.get('title') or '').lower()
+    description = (job.get('description') or '').lower()
+    deadline = (job.get('deadline') or '').lower()
+    post_date = (job.get('post_date') or '').lower()
+
+    # Check for past year mentions in key fields
+    for year in past_years:
+        # Title mentions like "2024 Graduate Scheme"
+        if year in title:
+            return True, f"Title contains {year}"
+
+        # Deadline in past year
+        if year in deadline:
+            return True, f"Deadline in {year}"
+
+        # Posted in past year (if explicitly stated)
+        if year in post_date and 'posted' not in post_date:
+            return True, f"Post date in {year}"
+
+    # Check for specific patterns like "September 2024" in description (first 500 chars)
+    desc_start = description[:500]
+    for year in past_years:
+        # Pattern: month + year in description header area
+        month_year_pattern = rf'(january|february|march|april|may|june|july|august|september|october|november|december)\s+{year}'
+        if re.search(month_year_pattern, desc_start):
+            return True, f"Description mentions {year}"
+
+    return False, None
+
+
+def is_senior_role(job):
+    """
+    Check if a job is a senior-level role (not suitable for recent graduates).
+    Returns (is_senior, reason) tuple.
+    """
+    title = (job.get('title') or '').lower()
+    description = (job.get('description') or '').lower()
+    requirements = job.get('requirements', [])
+    req_text = ' '.join([str(r).lower() for r in requirements])
+
+    # STRONG indicators in title - immediate disqualification
+    senior_title_keywords = [
+        'senior', 'sr.', 'sr ', 'lead', 'principal', 'staff', 'head of',
+        'director', 'vp ', 'vice president', 'chief', 'manager', 'team lead'
+    ]
+
+    for keyword in senior_title_keywords:
+        if keyword in title:
+            return True, f"Title contains '{keyword}'"
+
+    # Experience requirements - check for high years
+    experience_patterns = [
+        r'(\d+)\+?\s*years?\s*(of\s+)?(experience|exp)',
+        r'(\d+)\+?\s*years?\s*(in\s+)?(industry|professional)',
+        r'minimum\s+(\d+)\s*years?',
+        r'at\s+least\s+(\d+)\s*years?',
+    ]
+
+    combined_text = f"{description} {req_text}"
+
+    for pattern in experience_patterns:
+        matches = re.findall(pattern, combined_text)
+        for match in matches:
+            years = int(match[0]) if match[0].isdigit() else 0
+            if years >= 5:
+                return True, f"Requires {years}+ years experience"
+
+    # Check requirements list for senior indicators
+    senior_req_phrases = [
+        'proven track record', 'extensive experience', 'deep expertise',
+        'significant experience', '5+ years', '7+ years', '10+ years',
+        'leadership experience', 'management experience', 'phd required'
+    ]
+
+    for phrase in senior_req_phrases:
+        if phrase in req_text or phrase in description[:1000]:
+            return True, f"Requirements mention '{phrase}'"
+
+    return False, None
+
+
 def calculate_quality_score(job):
     """
     Calculate a quality score for a job posting (0-100).
     Higher score = more likely to be a relevant, real job posting.
+
+    Now includes:
+    - Senior role detection (penalized)
+    - Past year detection (penalized)
+    - Graduate-friendly indicators (boosted)
     """
     score = 50  # Base score
 
@@ -323,10 +599,28 @@ def calculate_quality_score(job):
     description = (job.get('description') or '').lower()
     company = (job.get('company') or '').lower()
 
+    # =====================================================
+    # CRITICAL NEGATIVE SIGNALS (check first)
+    # =====================================================
+
+    # Check if job is from a past year (2024 or earlier)
+    is_old, old_reason = is_job_from_past_year(job)
+    if is_old:
+        score -= 50  # Heavy penalty for old jobs
+        job['_filter_reason'] = old_reason  # Track why for debugging
+
+    # Check if job is senior level
+    is_senior, senior_reason = is_senior_role(job)
+    if is_senior:
+        score -= 40  # Heavy penalty for senior roles
+        job['_filter_reason'] = senior_reason
+
+    # =====================================================
     # POSITIVE signals
+    # =====================================================
 
     # Specific job title (not generic)
-    if any(word in title for word in ['engineer', 'scientist', 'analyst', 'developer', 'researcher', 'graduate']):
+    if any(word in title for word in ['engineer', 'scientist', 'analyst', 'developer', 'researcher']):
         score += 10
 
     # Has a real company name (not "LinkedIn Job" or "Indeed Listing")
@@ -346,17 +640,33 @@ def calculate_quality_score(job):
     if len(description) > 100:
         score += 5
 
-    # Graduate scheme indicators (high priority for user)
-    if any(phrase in title.lower() or phrase in description.lower()
-           for phrase in ['graduate scheme', 'graduate programme', 'graduate program', 'early careers']):
-        score += 20
+    # GRADUATE-FRIENDLY indicators (HIGH priority!)
+    graduate_keywords = [
+        'graduate scheme', 'graduate programme', 'graduate program',
+        'early careers', 'entry level', 'entry-level', 'junior',
+        'new graduate', 'recent graduate', 'graduate role',
+        'graduate position', 'trainee', 'apprentice', '0-2 years',
+        '1-2 years', 'no experience required'
+    ]
+
+    if any(phrase in title for phrase in graduate_keywords):
+        score += 25  # Big boost for graduate roles in title
+    elif any(phrase in description[:500] for phrase in graduate_keywords):
+        score += 15  # Smaller boost if in description
 
     # Healthcare/biomedical indicators (user's interest)
-    if any(word in title.lower() or word in description.lower()
-           for word in ['healthcare', 'medical', 'biomedical', 'clinical', 'health']):
+    if any(word in title or word in description[:500]
+           for word in ['healthcare', 'medical', 'biomedical', 'clinical', 'health', 'nhs']):
         score += 10
 
-    # NEGATIVE signals
+    # Current year indicator (2025) - good sign
+    current_year = str(datetime.now().year)
+    if current_year in title or current_year in description[:300]:
+        score += 10
+
+    # =====================================================
+    # OTHER NEGATIVE signals
+    # =====================================================
 
     # Aggregator indicators in title
     if re.search(r'\d{2,},?\d*\+?\s+jobs', title):
@@ -379,11 +689,9 @@ def calculate_quality_score(job):
 
 def find_all_industry_jobs():
     """
-    Find industry ML jobs using BOTH methods:
-    1. Direct scraping of configured sites
-    2. Google Search as supplement
+    Find industry ML jobs using Google Custom Search API.
 
-    Now with:
+    Features:
     - URL validation to filter aggregator pages
     - Deadline validation to filter expired jobs
     - Quality scoring to prioritize best matches
@@ -395,19 +703,8 @@ def find_all_industry_jobs():
 
     all_jobs = []
 
-    # METHOD 1: Direct site scraping
-    print("📍 METHOD 1: Direct Site Scraping")
-    print("-" * 60)
-
-    try:
-        scraped_jobs = scrape_all_sites()
-        all_jobs.extend(scraped_jobs)
-        print(f"✅ Found {len(scraped_jobs)} jobs from direct scraping\n")
-    except Exception as e:
-        print(f"❌ Scraping error: {e}\n")
-
-    # METHOD 2: Google Search (supplement)
-    print("📍 METHOD 2: Google Search (Enhanced)")
+    # Google Search for jobs
+    print("📍 Google Search (Enhanced)")
     print("-" * 60)
 
     try:
@@ -436,6 +733,9 @@ def find_all_industry_jobs():
     validated_jobs = []
     expired_count = 0
     invalid_count = 0
+    old_year_count = 0
+    senior_count = 0
+    low_quality_count = 0
 
     for job in unique_jobs:
         # Check URL validity
@@ -453,16 +753,41 @@ def find_all_industry_jobs():
                 print(f"   ⏭️  Expired: {job.get('title', 'Unknown')[:40]}... (deadline: {deadline})")
                 continue
 
+        # Check if job is from a past year (2024 or earlier)
+        is_old, old_reason = is_job_from_past_year(job)
+        if is_old:
+            old_year_count += 1
+            print(f"   ⏭️  Old job: {job.get('title', 'Unknown')[:40]}... ({old_reason})")
+            continue
+
+        # Check if job is senior level
+        is_senior, senior_reason = is_senior_role(job)
+        if is_senior:
+            senior_count += 1
+            print(f"   ⏭️  Senior: {job.get('title', 'Unknown')[:40]}... ({senior_reason})")
+            continue
+
         # Add quality score if not already present
         if 'quality_score' not in job:
             job['quality_score'] = calculate_quality_score(job)
+
+        # Filter out very low quality jobs
+        if job['quality_score'] < 25:
+            low_quality_count += 1
+            print(f"   ⏭️  Low quality ({job['quality_score']}): {job.get('title', 'Unknown')[:40]}...")
+            continue
 
         validated_jobs.append(job)
 
     # Sort by quality score
     validated_jobs.sort(key=lambda x: x.get('quality_score', 0), reverse=True)
 
-    print(f"\n   Filtered out: {invalid_count} invalid URLs, {expired_count} expired deadlines")
+    print(f"\n   Filtered out:")
+    print(f"      • {invalid_count} invalid URLs")
+    print(f"      • {expired_count} expired deadlines")
+    print(f"      • {old_year_count} old/2024 jobs")
+    print(f"      • {senior_count} senior roles")
+    print(f"      • {low_quality_count} low quality")
 
     print("\n" + "=" * 60)
     print(f"✅ Total validated industry jobs: {len(validated_jobs)}")
@@ -476,13 +801,11 @@ def find_all_industry_jobs():
 
 def find_all_phd_positions():
     """
-    Find PhD positions using BOTH methods:
-    1. Direct scraping of PhD sources
-    2. Google Search as supplement
+    Find PhD positions using Google Custom Search API.
 
-    Now with:
+    Features:
     - URL validation to filter aggregator pages
-    - Deadline validation to filter EXPIRED positions (key improvement!)
+    - Deadline validation to filter EXPIRED positions
     - Quality scoring to prioritize funded, relevant positions
     """
 
@@ -492,28 +815,8 @@ def find_all_phd_positions():
 
     all_positions = []
 
-    # METHOD 1: Direct scraping of PhD sources
-    print("📍 METHOD 1: Direct PhD Site Scraping")
-    print("-" * 60)
-
-    try:
-        scraper = UniversalJobScraper()
-
-        # Scrape PhD-specific sources
-        if 'phd_sources' in scraper.config:
-            for source in scraper.config['phd_sources']:
-                positions = scraper.scrape_site(source['name'], source['url'])
-                # Mark as PhD type
-                for pos in positions:
-                    pos['type'] = 'PhD'
-                all_positions.extend(positions)
-
-        print(f"✅ Found {len(all_positions)} positions from direct scraping\n")
-    except Exception as e:
-        print(f"❌ Scraping error: {e}\n")
-
-    # METHOD 2: Google Search
-    print("📍 METHOD 2: Google Search (Enhanced)")
+    # Google Search for PhD positions
+    print("📍 Google Search (Enhanced)")
     print("-" * 60)
 
     try:
@@ -542,6 +845,8 @@ def find_all_phd_positions():
     validated_positions = []
     expired_count = 0
     invalid_count = 0
+    old_year_count = 0
+    low_quality_count = 0
 
     for pos in unique_positions:
         # Check URL validity
@@ -560,6 +865,13 @@ def find_all_phd_positions():
                 print(f"   ⏭️  EXPIRED: {pos.get('title', 'Unknown')[:40]}... (deadline: {date_str})")
                 continue
 
+        # Check if position is from a past year (2024 or earlier)
+        is_old, old_reason = is_job_from_past_year(pos)
+        if is_old:
+            old_year_count += 1
+            print(f"   ⏭️  Old position: {pos.get('title', 'Unknown')[:40]}... ({old_reason})")
+            continue
+
         # Add quality score if not already present
         if 'quality_score' not in pos:
             pos['quality_score'] = calculate_quality_score(pos)
@@ -573,12 +885,22 @@ def find_all_phd_positions():
             if any(word in title_lower or word in desc_lower for word in ['cdt', 'centre for doctoral']):
                 pos['quality_score'] += 10
 
+        # Filter out very low quality positions
+        if pos['quality_score'] < 25:
+            low_quality_count += 1
+            print(f"   ⏭️  Low quality ({pos['quality_score']}): {pos.get('title', 'Unknown')[:40]}...")
+            continue
+
         validated_positions.append(pos)
 
     # Sort by quality score
     validated_positions.sort(key=lambda x: x.get('quality_score', 0), reverse=True)
 
-    print(f"\n   Filtered out: {invalid_count} invalid URLs, {expired_count} EXPIRED deadlines")
+    print(f"\n   Filtered out:")
+    print(f"      • {invalid_count} invalid URLs")
+    print(f"      • {expired_count} EXPIRED deadlines")
+    print(f"      • {old_year_count} old/2024 positions")
+    print(f"      • {low_quality_count} low quality")
 
     print("\n" + "=" * 60)
     print(f"✅ Total validated PhD positions: {len(validated_positions)}")
@@ -669,9 +991,6 @@ def search_google_industry_jobs():
     all_jobs = []
     seen_urls = set()
 
-    # Initialize scraper for fetching full details
-    scraper = UniversalJobScraper()
-
     for query in queries:
         print(f"   🔍 {query[:55]}...")
 
@@ -734,12 +1053,12 @@ def search_google_industry_jobs():
                     if job['quality_score'] >= 50:
                         try:
                             print(f"      📄 Fetching details for: {item_title[:40]}...")
-                            full_details = scraper.scrape_with_details(item_url)
+                            full_details = fetch_job_details(item_url)
 
                             # Merge full details with job
                             if full_details.get('title') and len(full_details['title']) > 5:
                                 job['title'] = full_details['title']
-                            if full_details.get('company'):
+                            if full_details.get('company') and full_details['company'] != 'Unknown':
                                 job['company'] = full_details['company']
                             if full_details.get('city'):
                                 job['city'] = full_details['city']
@@ -751,9 +1070,9 @@ def search_google_industry_jobs():
                                 job['requirements'] = full_details['requirements']
                             if full_details.get('expectations'):
                                 job['expectations'] = full_details['expectations']
-                            if full_details.get('cv_required'):
+                            if full_details.get('cv_required') and full_details['cv_required'] != 'Not specified':
                                 job['cv_required'] = full_details['cv_required']
-                            if full_details.get('cover_letter_required'):
+                            if full_details.get('cover_letter_required') and full_details['cover_letter_required'] != 'Not specified':
                                 job['cover_letter_required'] = full_details['cover_letter_required']
                             if full_details.get('description'):
                                 job['description'] = full_details['description']
@@ -852,9 +1171,6 @@ def search_google_phd_positions():
     all_positions = []
     seen_urls = set()
 
-    # Initialize scraper for fetching full details
-    scraper = UniversalJobScraper()
-
     for query in queries:
         print(f"   🔍 {query[:55]}...")
 
@@ -926,16 +1242,16 @@ def search_google_phd_positions():
                         print(f"      ⏭️  Low quality ({position['quality_score']}): {item_title[:40]}...")
                         continue
 
-                    # ENHANCE: Fetch full details for high-quality results
+                    # ENHANCE: Fetch full details for PhD positions (especially deadlines!)
                     if position['quality_score'] >= 45:
                         try:
                             print(f"      📄 Fetching details for: {item_title[:40]}...")
-                            full_details = scraper.scrape_with_details(item_url)
+                            full_details = fetch_job_details(item_url)
 
                             # Merge full details
                             if full_details.get('title') and len(full_details['title']) > 5:
                                 position['title'] = full_details['title']
-                            if full_details.get('company'):
+                            if full_details.get('company') and full_details['company'] != 'Unknown':
                                 position['company'] = full_details['company']
                             if full_details.get('city'):
                                 position['city'] = full_details['city']

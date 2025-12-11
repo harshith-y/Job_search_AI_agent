@@ -1,0 +1,433 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-12-10T15:31:05.186729",
+  "learning_stats": {
+    "total_feedback_processed": 104,
+    "liked_count": 5,
+    "disliked_count": 78,
+    "maybe_count": 21,
+    "precision": 0.048
+  },
+  "discovered_patterns": {
+    "positive_signals": {
+      "companies": {
+        "university of oxford": 2,
+        "gradcracker": 1,
+        "imperial college london": 1
+      },
+      "title_keywords": {
+        "fundamentals": 2,
+        "cdt": 2,
+        "computing": 1,
+        "technology": 1,
+        "opportunities": 1,
+        "gradcracker": 1,
+        "careers": 1,
+        "engineer": 1,
+        "eit": 1,
+        "healthcare": 1
+      },
+      "technologies": {
+        "ai": 4,
+        "research": 4,
+        "programme": 3,
+        "ml": 3,
+        "machine learning": 3,
+        "healthcare": 3,
+        "medical": 3,
+        "data science": 2,
+        "graduate": 2,
+        "entry": 2,
+        "clinical": 2,
+        "scheme": 1,
+        "deep learning": 1,
+        "nlp": 1
+      },
+      "locations": {
+        "uk": 5
+      },
+      "job_types": {
+        "phd": 3,
+        "industry": 2
+      }
+    },
+    "negative_signals": {
+      "companies": {
+        "findaphd": 25,
+        "university of cambridge": 3,
+        "job-boards": 2,
+        "careers": 2,
+        "jobs": 2,
+        "deloitte": 2,
+        "the university of manchester": 2,
+        "swansea university- medical school": 2,
+        "applykite": 2,
+        "university of oxford": 2,
+        "imperial college london": 2,
+        "university of edinburgh": 2,
+        "fticonsult": 1,
+        "boeing": 1,
+        "derby college group": 1
+      },
+      "title_keywords": {
+        "phd": 36,
+        "data": 19,
+        "projects": 17,
+        "machine": 14,
+        "learning": 14,
+        "programmes": 14,
+        "science": 13,
+        "fully": 10,
+        "funded": 10,
+        "health": 9,
+        "scholarships": 9,
+        "healthcare": 8,
+        "studentship": 8,
+        "graduate": 7,
+        "scientist": 5,
+        "biomedical": 5,
+        "university": 5,
+        "scheme": 4,
+        "careers": 4,
+        "engineering": 4,
+        "epsrc": 4,
+        "intelligence": 4,
+        "computer": 4,
+        "vision": 4,
+        "united": 3,
+        "technology": 3,
+        "engineer": 3,
+        "jobs": 3,
+        "well": 3,
+        "being": 3
+      },
+      "technologies": {
+        "ai": 62,
+        "healthcare": 61,
+        "research": 52,
+        "ml": 46,
+        "medical": 39,
+        "programme": 31,
+        "data science": 30,
+        "graduate": 25,
+        "machine learning": 23,
+        "biomedical": 18,
+        "entry": 17,
+        "scheme": 16,
+        "intern": 14,
+        "clinical": 8,
+        "computer vision": 5
+      },
+      "locations": {
+        "uk": 74,
+        "london": 2,
+        "\ud83d\udd0dunited kingdom": 1,
+        "addressimperial college londonsouth kensington campuslondonsw7 2az": 1
+      },
+      "job_types": {
+        "phd": 51,
+        "industry": 27
+      }
+    },
+    "uncertain_signals": {
+      "companies": {
+        "university of cambridge": 4,
+        "findaphd": 3,
+        "apply": 2,
+        "ucl": 2,
+        "imperial college london": 2,
+        "jobs": 1,
+        "\u0627\u0644\u0639\u064e\u0631\u064e\u0628\u0650\u064a\u064e\u0651\u0629 (\u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629)english (united states)espa\u00f1ol (espa\u00f1a)espa\u00f1ol (m\u00e9xico)fran\u00e7ais (canada)fran\u00e7": 1,
+        "palantir": 1,
+        "erm": 1,
+        "university of oxford": 1,
+        "university of edinburgh": 1,
+        "manchester": 1,
+        "oip": 1
+      },
+      "title_keywords": {
+        "phd": 7,
+        "science": 5,
+        "engineering": 4,
+        "careers": 3,
+        "biomedical": 3,
+        "projects": 3,
+        "wipro": 2,
+        "into": 2,
+        "funded": 2,
+        "programmes": 2,
+        "data": 2,
+        "computer": 2,
+        "imperial": 2,
+        "college": 2,
+        "doctoral": 2,
+        "training": 2,
+        "create": 1,
+        "life": 1,
+        "changing": 1,
+        "impact": 1,
+        "worldwide": 1,
+        "machine": 1,
+        "learning": 1,
+        "research": 1,
+        "engineer": 1,
+        "unitary": 1,
+        "graduate": 1,
+        "energy": 1,
+        "market": 1,
+        "analyst": 1
+      },
+      "technologies": {
+        "ai": 19,
+        "healthcare": 17,
+        "ml": 16,
+        "research": 14,
+        "medical": 12,
+        "graduate": 12,
+        "programme": 11,
+        "biomedical": 9,
+        "data science": 8,
+        "scheme": 6,
+        "machine learning": 5,
+        "clinical": 3,
+        "entry": 3,
+        "intern": 3,
+        "nlp": 1
+      },
+      "locations": {
+        "uk": 19,
+        "addressimperial college londonsouth kensington campuslondonsw7 2az": 1,
+        "postal addressshow on map10 crichton street": 1
+      },
+      "job_types": {
+        "phd": 15,
+        "industry": 6
+      }
+    },
+    "differential_signals": {
+      "strong_positives": {
+        "fundamentals": {
+          "liked_count": 2,
+          "disliked_count": 0,
+          "ratio": 2.0
+        },
+        "cdt": {
+          "liked_count": 2,
+          "disliked_count": 0,
+          "ratio": 2.0
+        }
+      },
+      "strong_negatives": {
+        "phd": {
+          "liked_count": 0,
+          "disliked_count": 36,
+          "ratio": 36.0
+        },
+        "data": {
+          "liked_count": 0,
+          "disliked_count": 19,
+          "ratio": 19.0
+        },
+        "projects": {
+          "liked_count": 0,
+          "disliked_count": 17,
+          "ratio": 17.0
+        },
+        "machine": {
+          "liked_count": 0,
+          "disliked_count": 14,
+          "ratio": 14.0
+        },
+        "learning": {
+          "liked_count": 0,
+          "disliked_count": 14,
+          "ratio": 14.0
+        },
+        "programmes": {
+          "liked_count": 0,
+          "disliked_count": 14,
+          "ratio": 14.0
+        },
+        "science": {
+          "liked_count": 0,
+          "disliked_count": 13,
+          "ratio": 13.0
+        },
+        "fully": {
+          "liked_count": 0,
+          "disliked_count": 10,
+          "ratio": 10.0
+        },
+        "funded": {
+          "liked_count": 0,
+          "disliked_count": 10,
+          "ratio": 10.0
+        },
+        "health": {
+          "liked_count": 0,
+          "disliked_count": 9,
+          "ratio": 9.0
+        },
+        "scholarships": {
+          "liked_count": 0,
+          "disliked_count": 9,
+          "ratio": 9.0
+        },
+        "healthcare": {
+          "liked_count": 1,
+          "disliked_count": 8,
+          "ratio": 8.0
+        },
+        "studentship": {
+          "liked_count": 0,
+          "disliked_count": 8,
+          "ratio": 8.0
+        },
+        "graduate": {
+          "liked_count": 0,
+          "disliked_count": 7,
+          "ratio": 7.0
+        },
+        "scientist": {
+          "liked_count": 0,
+          "disliked_count": 5,
+          "ratio": 5.0
+        },
+        "biomedical": {
+          "liked_count": 0,
+          "disliked_count": 5,
+          "ratio": 5.0
+        },
+        "university": {
+          "liked_count": 0,
+          "disliked_count": 5,
+          "ratio": 5.0
+        },
+        "scheme": {
+          "liked_count": 0,
+          "disliked_count": 4,
+          "ratio": 4.0
+        },
+        "careers": {
+          "liked_count": 1,
+          "disliked_count": 4,
+          "ratio": 4.0
+        },
+        "engineering": {
+          "liked_count": 0,
+          "disliked_count": 4,
+          "ratio": 4.0
+        },
+        "epsrc": {
+          "liked_count": 0,
+          "disliked_count": 4,
+          "ratio": 4.0
+        },
+        "intelligence": {
+          "liked_count": 0,
+          "disliked_count": 4,
+          "ratio": 4.0
+        },
+        "computer": {
+          "liked_count": 0,
+          "disliked_count": 4,
+          "ratio": 4.0
+        },
+        "vision": {
+          "liked_count": 0,
+          "disliked_count": 4,
+          "ratio": 4.0
+        },
+        "united": {
+          "liked_count": 0,
+          "disliked_count": 3,
+          "ratio": 3.0
+        },
+        "technology": {
+          "liked_count": 1,
+          "disliked_count": 3,
+          "ratio": 3.0
+        },
+        "engineer": {
+          "liked_count": 1,
+          "disliked_count": 3,
+          "ratio": 3.0
+        },
+        "jobs": {
+          "liked_count": 0,
+          "disliked_count": 3,
+          "ratio": 3.0
+        },
+        "well": {
+          "liked_count": 0,
+          "disliked_count": 3,
+          "ratio": 3.0
+        },
+        "being": {
+          "liked_count": 0,
+          "disliked_count": 3,
+          "ratio": 3.0
+        }
+      },
+      "liked_companies": {},
+      "disliked_companies": {
+        "findaphd": {
+          "liked_count": 0,
+          "disliked_count": 25
+        },
+        "university of cambridge": {
+          "liked_count": 0,
+          "disliked_count": 3
+        },
+        "job-boards": {
+          "liked_count": 0,
+          "disliked_count": 2
+        },
+        "careers": {
+          "liked_count": 0,
+          "disliked_count": 2
+        },
+        "jobs": {
+          "liked_count": 0,
+          "disliked_count": 2
+        },
+        "deloitte": {
+          "liked_count": 0,
+          "disliked_count": 2
+        },
+        "the university of manchester": {
+          "liked_count": 0,
+          "disliked_count": 2
+        },
+        "swansea university- medical school": {
+          "liked_count": 0,
+          "disliked_count": 2
+        },
+        "applykite": {
+          "liked_count": 0,
+          "disliked_count": 2
+        },
+        "imperial college london": {
+          "liked_count": 1,
+          "disliked_count": 2
+        },
+        "university of edinburgh": {
+          "liked_count": 0,
+          "disliked_count": 2
+        }
+      }
+    },
+    "stats": {
+      "liked_count": 5,
+      "disliked_count": 78,
+      "maybe_count": 21,
+      "total_reviewed": 104
+    }
+  },
+  "dynamic_personalization_notes": "==================================================\nLEARNED FROM USER FEEDBACK\n==================================================\n\nFeedback summary: 5 liked, 78 disliked, 21 maybe\nCurrent precision: 5%\n\nSTRONGLY PREFERRED (user consistently likes these keywords):\n  + 'fundamentals' (liked 2x vs disliked 0x)\n  + 'cdt' (liked 2x vs disliked 0x)\n\nSTRONGLY AVOIDED (user consistently dislikes these keywords):\n  - 'phd' (disliked 36x vs liked 0x)\n  - 'data' (disliked 19x vs liked 0x)\n  - 'projects' (disliked 17x vs liked 0x)\n  - 'machine' (disliked 14x vs liked 0x)\n  - 'learning' (disliked 14x vs liked 0x)\n  - 'programmes' (disliked 14x vs liked 0x)\n  - 'science' (disliked 13x vs liked 0x)\n\nAVOIDED COMPANIES (user has disliked multiple jobs from):\n  - findaphd (25 disliked)\n  - university of cambridge (3 disliked)\n  - job-boards (2 disliked)\n  - careers (2 disliked)\n  - jobs (2 disliked)\n\nFILTERING GUIDANCE: User only liked 5% of suggestions.\n  -> Be MORE selective! Apply stricter criteria.\n  -> Prioritize jobs with the STRONGLY PREFERRED keywords above.\n\n==================================================",
+  "strictness_adjustment": {
+    "current": "lenient",
+    "recommended": "strict",
+    "reason": "Very low precision (5%) - too many irrelevant jobs passing filter"
+  }
+}

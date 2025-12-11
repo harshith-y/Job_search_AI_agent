@@ -265,8 +265,8 @@ def main(search_type="both"):
     print("="*70)
     
     print(f"\n📊 Results saved to:")
-    print(f"   • job_applications_enhanced.xlsx (spreadsheet)")
-    print(f"   • job_tracker_enhanced.json (database)")
+    print(f"   • job_applications.xlsx (spreadsheet)")
+    print(f"   • job_tracker.json (database)")
     print()
     
     print("Next steps:")
